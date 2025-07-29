@@ -1,0 +1,1 @@
+ D:\\detiste\ app\\dental\ Cloud\\.dart_tool\\flutter_build\\0ca187f2076cfd893e1dddc18d66ff37\\native_assets.json: 

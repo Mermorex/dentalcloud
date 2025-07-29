@@ -1,0 +1,469 @@
+// lib/screens/patients_list.dart
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../models/visit.dart';
+import '../providers/patient_provider.dart';
+import 'patient_detail_screen.dart';
+import 'add_patient_screen.dart'; // Import the AddPatientScreen
+
+class PatientsList extends StatefulWidget {
+  const PatientsList({Key? key}) : super(key: key);
+
+  @override
+  State<PatientsList> createState() => _PatientsListState();
+}
+
+class _PatientsListState extends State<PatientsList> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PatientProvider>(context, listen: false).loadPatients();
+    });
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    Provider.of<PatientProvider>(
+      context,
+      listen: false,
+    ).filterPatients(_searchController.text);
+  }
+
+  String _formatDateOfBirth(dynamic dob) {
+    if (dob == null) return '';
+    if (dob is DateTime) {
+      return '${dob.day.toString().padLeft(2, '0')}/${dob.month.toString().padLeft(2, '0')}/${dob.year}';
+    }
+    if (dob is String && dob.isNotEmpty) {
+      try {
+        final date = DateTime.parse(dob);
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      } catch (e) {
+        return dob;
+      }
+    }
+    return dob.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0, // Remove shadow for a flatter look
+        toolbarHeight: 80, // Adjust height as needed
+        title: Padding(
+          padding: const EdgeInsets.only(
+            left: 0.0,
+          ), // Adjust padding for title if necessary
+          child: Text(
+            'Patients',
+            style: GoogleFonts.montserrat(
+              fontSize: isTablet ? 32 : 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.teal.shade800,
+            ),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: Icon(
+                Icons.person_add_alt_1,
+                color: Colors.teal.shade600,
+                size: isTablet ? 32 : 28,
+              ),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddPatientScreen(),
+                  ),
+                );
+                if (result == true) {
+                  // If a patient was successfully added, refresh the list
+                  Provider.of<PatientProvider>(
+                    context,
+                    listen: false,
+                  ).loadPatients();
+                  _searchController.clear(); // Clear search to show new patient
+                  _onSearchChanged(); // Re-filter to show all patients
+                }
+              },
+              tooltip: 'Add New Patient',
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(
+            80.0,
+          ), // Height for the search bar
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 10.0,
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: GoogleFonts.montserrat(fontSize: 16),
+              decoration: InputDecoration(
+                hintText: 'Search patients...',
+                hintStyle: GoogleFonts.montserrat(
+                  fontSize: 16,
+                  color: Colors.grey.shade500,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.teal.shade600,
+                  size: 22,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear, color: Colors.grey.shade500),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: Colors.teal.shade400, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 24.0,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          // The search area is now part of the AppBar's bottom
+          Expanded(
+            child: Consumer<PatientProvider>(
+              builder: (context, patientProvider, child) {
+                // Empty state - no patients
+                if (patientProvider.filteredPatients.isEmpty &&
+                    patientProvider.currentSearchQuery.isEmpty) {
+                  return _buildEmptyState(isTablet);
+                }
+
+                // No search results
+                if (patientProvider.filteredPatients.isEmpty &&
+                    patientProvider.currentSearchQuery.isNotEmpty) {
+                  return _buildNoResultsState(
+                    patientProvider.currentSearchQuery,
+                    isTablet,
+                  );
+                }
+
+                // Patient list
+                return ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 24.0 : 16.0,
+                    vertical: 16.0,
+                  ),
+                  itemCount: patientProvider.filteredPatients.length,
+                  itemBuilder: (context, index) {
+                    final patient = patientProvider.filteredPatients[index];
+                    return _buildPatientCard(
+                      patient,
+                      isTablet,
+                      patientProvider,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build empty state UI
+  Widget _buildEmptyState(bool isTablet) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.teal.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_off_outlined,
+              size: isTablet ? 80 : 60,
+              color: Colors.teal.shade300,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No patients added yet',
+            style: GoogleFonts.montserrat(
+              fontSize: isTablet ? 22 : 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Start by adding your first patient',
+            style: GoogleFonts.montserrat(
+              fontSize: isTablet ? 18 : 16,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build no search results UI
+  Widget _buildNoResultsState(String query, bool isTablet) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.search_off_outlined,
+              size: isTablet ? 80 : 60,
+              color: Colors.blue.shade300,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No results found',
+            style: GoogleFonts.montserrat(
+              fontSize: isTablet ? 22 : 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'No patients match "$query"',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.montserrat(
+                fontSize: isTablet ? 18 : 16,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build patient card
+  Widget _buildPatientCard(
+    patient,
+    bool isTablet,
+    PatientProvider patientProvider,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  PatientDetailScreen(patient: patient),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+              transitionDuration: const Duration(milliseconds: 300),
+            ),
+          );
+          patientProvider.loadPatients();
+          patientProvider.filterPatients(_searchController.text);
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
+          child: Row(
+            children: [
+              // Patient Avatar
+              Container(
+                width: isTablet ? 64 : 56,
+                height: isTablet ? 64 : 56,
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade100,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.teal.shade200, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    patient.name.isNotEmpty
+                        ? patient.name[0].toUpperCase()
+                        : '?',
+                    style: GoogleFonts.montserrat(
+                      fontSize: isTablet ? 28 : 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade800,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // Patient Information
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      patient.name,
+                      style: GoogleFonts.montserrat(
+                        fontSize: isTablet ? 20 : 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        // Gender Icon
+                        Icon(
+                          patient.gender == 'Male' ? Icons.male : Icons.female,
+                          size: isTablet ? 20 : 18,
+                          color: patient.gender == 'Male'
+                              ? Colors.blue.shade500
+                              : Colors.pink.shade400,
+                        ),
+                        const SizedBox(width: 6),
+                        // Date of Birth
+                        Text(
+                          _formatDateOfBirth(patient.dateOfBirth),
+                          style: GoogleFonts.montserrat(
+                            fontSize: isTablet ? 16 : 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Age
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${patient.age} years',
+                            style: GoogleFonts.montserrat(
+                              fontSize: isTablet ? 14 : 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Visit Count
+              FutureBuilder<List<Visit>>(
+                future: patient.id != null
+                    ? patientProvider.getVisitsForPatient(patient.id!)
+                    : Future.value([]),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final int visitCount = snapshot.data?.length ?? 0;
+                  return Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 12 : 10,
+                      vertical: isTablet ? 8 : 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.event_note_outlined,
+                          size: isTablet ? 20 : 18,
+                          color: Colors.teal.shade600,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$visitCount',
+                          style: GoogleFonts.montserrat(
+                            fontSize: isTablet ? 18 : 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

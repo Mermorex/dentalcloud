@@ -1,0 +1,28 @@
+^D:\DETISTE APP\DENTAL CLOUD\BUILD\WINDOWS\X64\CMAKEFILES\0EC28D9B67FC81B11F0B78734FF8109B\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=D:\flutter "PROJECT_DIR=D:\detiste app\dental Cloud" FLUTTER_ROOT=D:\flutter "FLUTTER_EPHEMERAL_DIR=D:\detiste app\dental Cloud\windows\flutter\ephemeral" "PROJECT_DIR=D:\detiste app\dental Cloud" "FLUTTER_TARGET=D:\detiste app\dental Cloud\lib\main.dart" DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuMzIuNw==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049ZDdiNTIzYjM1Ng==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049MzlkNmQ2ZTY5OQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My44LjE= DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false "PACKAGE_CONFIG=D:\detiste app\dental Cloud\.dart_tool\package_config.json" D:/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^D:\DETISTE APP\DENTAL CLOUD\BUILD\WINDOWS\X64\CMAKEFILES\96A7C75A4705C3A503E4F8F46F62AAFF\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^D:\DETISTE APP\DENTAL CLOUD\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SD:/detiste app/dental Cloud/windows" "-BD:/detiste app/dental Cloud/build/windows/x64" --check-stamp-file "D:/detiste app/dental Cloud/build/windows/x64/flutter/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

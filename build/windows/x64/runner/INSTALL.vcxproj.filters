@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\detiste app\dental Cloud\build\windows\x64\CMakeFiles\a4adb2064f3d1a9dc7ad1c79d9f08476\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{967D198F-14AE-3690-98AE-9FE537B8F389}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
