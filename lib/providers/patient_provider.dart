@@ -4,6 +4,7 @@ import '../models/patient.dart';
 import '../models/visit.dart';
 import '../models/appointment.dart';
 import '../db/database_helper.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for auth.uid()
 
 class PatientProvider with ChangeNotifier {
   List<Patient> _patients = [];
@@ -18,84 +19,213 @@ class PatientProvider with ChangeNotifier {
   List<Appointment> get appointments => _appointments;
   String get currentSearchQuery => _currentSearchQuery;
 
+  // Helper to get the current client ID.
+  // This assumes the `auth.uid()` from Supabase corresponds to your client_id.
+  // If your client_id is stored in a different part of user metadata or a separate table,
+  // adjust this logic accordingly.
+  String? get _currentClientId {
+    return Supabase.instance.client.auth.currentUser?.id;
+  }
+
   Future<void> loadPatients() async {
-    // This will now call the Supabase-backed getPatientsWithVisitCount
-    // This assumes your DatabaseHelper.instance.getPatientsWithVisitCount()
-    // correctly returns a list of Patient objects with visitCount (if your Patient model supports it).
-    _patients = await DatabaseHelper.instance.getPatientsWithVisitCount();
-    filterPatients(_currentSearchQuery);
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      // Handle case where client ID is not available (e.g., not logged in)
+      print('Error: Client ID not found. Cannot load patients.');
+      _patients = []; // Clear patients if client ID is missing
+      _filteredPatients = [];
+      notifyListeners();
+      return;
+    }
+    try {
+      _patients = await DatabaseHelper.instance.getPatientsWithVisitCount(
+        clientId,
+      );
+      filterPatients(_currentSearchQuery);
+    } catch (e) {
+      print('Failed to load patients: ${e.toString()}');
+      // Consider setting an error state if you re-introduce it
+    }
     notifyListeners();
   }
 
   Future<bool> addPatient(Patient p) async {
-    await loadPatients(); // Ensure latest count
-    if (_patients.length >= MAX_PATIENT_LIMIT) {
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot add patient.');
       return false;
     }
-    await DatabaseHelper.instance.insertPatient(p);
-    await loadPatients();
-    return true;
+    await loadPatients(); // Ensure latest count
+    if (_patients.length >= MAX_PATIENT_LIMIT) {
+      print('Patient limit reached. Cannot add more patients.');
+      return false;
+    }
+    try {
+      // Create a new patient object with the client ID
+      final patientWithClientId = p.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.insertPatient(patientWithClientId);
+      await loadPatients();
+      return true;
+    } catch (e) {
+      print('Failed to add patient: ${e.toString()}');
+      return false;
+    }
   }
 
   Future<void> updatePatient(Patient p) async {
-    await DatabaseHelper.instance.updatePatient(p);
-    await loadPatients();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot update patient.');
+      return;
+    }
+    try {
+      final patientWithClientId = p.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.updatePatient(patientWithClientId);
+      await loadPatients();
+    } catch (e) {
+      print('Failed to update patient: ${e.toString()}');
+    }
   }
 
   Future<void> deletePatient(String patientId) async {
-    await DatabaseHelper.instance.deletePatient(patientId);
-    await loadPatients();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot delete patient.');
+      return;
+    }
+    try {
+      await DatabaseHelper.instance.deletePatient(patientId, clientId);
+      await loadPatients();
+    } catch (e) {
+      print('Failed to delete patient: ${e.toString()}');
+    }
   }
 
   // --- Visit related methods ---
   Future<List<Visit>> getVisitsForPatient(String patientId) async {
-    return await DatabaseHelper.instance.getVisitsForPatient(patientId);
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot get visits.');
+      return [];
+    }
+    try {
+      return await DatabaseHelper.instance.getVisitsForPatient(
+        patientId,
+        clientId,
+      );
+    } catch (e) {
+      print('Failed to get visits: ${e.toString()}');
+      return [];
+    }
   }
 
   Future<void> addVisit(Visit visit) async {
-    await DatabaseHelper.instance.insertVisit(visit);
-    // After adding a visit, you might want to refresh the patient's visit count
-    // and notify listeners for any UI that displays visit counts.
-    await loadPatients(); // This reloads patients, implicitly updating visit counts.
-    // If you're on the patient detail screen, you'll need to re-fetch visits there
-    // using _fetchVisits() call in initState or after a navigation.
-    notifyListeners();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot add visit.');
+      return;
+    }
+    try {
+      final visitWithClientId = visit.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.insertVisit(visitWithClientId);
+      await loadPatients(); // This reloads patients, implicitly updating visit counts.
+      notifyListeners();
+    } catch (e) {
+      print('Failed to add visit: ${e.toString()}');
+    }
   }
 
   Future<void> updateVisit(Visit visit) async {
-    await DatabaseHelper.instance.updateVisit(visit);
-    // After updating a visit, notify listeners for any UI that displays visit data.
-    // The PatientDetailScreen will typically re-fetch visits after this.
-    notifyListeners();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot update visit.');
+      return;
+    }
+    try {
+      final visitWithClientId = visit.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.updateVisit(visitWithClientId);
+      notifyListeners();
+    } catch (e) {
+      print('Failed to update visit: ${e.toString()}');
+    }
   }
 
   Future<void> deleteVisit(String visitId) async {
-    await DatabaseHelper.instance.deleteVisit(visitId);
-    // After deleting a visit, you might want to refresh the patient's visit count
-    // and notify listeners for any UI that displays visit counts.
-    await loadPatients(); // This reloads patients, implicitly updating visit counts.
-    notifyListeners();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot delete visit.');
+      return;
+    }
+    try {
+      await DatabaseHelper.instance.deleteVisit(visitId, clientId);
+      await loadPatients(); // This reloads patients, implicitly updating visit counts.
+      notifyListeners();
+    } catch (e) {
+      print('Failed to delete visit: ${e.toString()}');
+    }
   }
 
   // --- Appointment related methods ---
   Future<void> loadAppointments() async {
-    _appointments = await DatabaseHelper.instance.getAllAppointments();
-    notifyListeners();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot load appointments.');
+      _appointments = [];
+      notifyListeners();
+      return;
+    }
+    try {
+      _appointments = await DatabaseHelper.instance.getAllAppointments(
+        clientId,
+      );
+      notifyListeners();
+    } catch (e) {
+      print('Failed to load appointments: ${e.toString()}');
+    }
   }
 
   Future<void> addAppointment(Appointment appointment) async {
-    await DatabaseHelper.instance.insertAppointment(appointment);
-    await loadAppointments();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot add appointment.');
+      return;
+    }
+    try {
+      final appointmentWithClientId = appointment.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.insertAppointment(appointmentWithClientId);
+      await loadAppointments();
+    } catch (e) {
+      print('Failed to add appointment: ${e.toString()}');
+    }
   }
 
   Future<void> updateAppointment(Appointment appointment) async {
-    await DatabaseHelper.instance.updateAppointment(appointment);
-    await loadAppointments();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot update appointment.');
+      return;
+    }
+    try {
+      final appointmentWithClientId = appointment.copyWith(clientId: clientId);
+      await DatabaseHelper.instance.updateAppointment(appointmentWithClientId);
+      await loadAppointments();
+    } catch (e) {
+      print('Failed to update appointment: ${e.toString()}');
+    }
   }
 
   Future<void> deleteAppointment(String appointmentId) async {
-    await DatabaseHelper.instance.deleteAppointment(appointmentId);
-    await loadAppointments();
+    final clientId = _currentClientId;
+    if (clientId == null) {
+      print('Error: Client ID not found. Cannot delete appointment.');
+      return;
+    }
+    try {
+      await DatabaseHelper.instance.deleteAppointment(appointmentId, clientId);
+      await loadAppointments();
+    } catch (e) {
+      print('Failed to delete appointment: ${e.toString()}');
+    }
   }
 
   String getPatientNameById(String patientId) {

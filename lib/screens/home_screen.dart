@@ -3,15 +3,17 @@ import 'package:dental/screens/patient_detail_screen.dart';
 import 'package:dental/screens/patients_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/patient_provider.dart';
+import '../models/patient.dart';
 import 'add_patient_screen.dart';
 import 'appointments_list_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import '../models/visit.dart';
-import '../db/database_helper.dart';
+import '../db/database_helper.dart'; // Added this line for DatabaseHelper.instance.backupDatabase
 import 'auth_screen.dart';
-import 'package:dental/widgets/main_button.dart'; // Import your MainButton
+import 'package:dental/widgets/main_button.dart';
 import 'add_appointment_screen.dart';
 
 // Define a GlobalKey for AppointmentsListScreen
@@ -26,29 +28,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Set _selectedIndex to 0, as Dashboard will now be the first item (index 0)
   int _selectedIndex = 0;
-  static const int _patientLimit =
-      20; // This limit will now be handled within PatientsList if needed
+  static const int _patientLimit = 20;
 
   late final List<Widget> _widgetOptions = <Widget>[
-    // Reordered: Dashboard, Appointments, Patients
     const DashboardScreen(),
     AppointmentsListScreen(key: appointmentsListScreenKey),
     const PatientsList(),
   ];
 
   final List<String> _appBarTitles = const [
-    // Reordered to match the new screen order
-    'Tableau de bord', // Corresponds to Dashboard (index 0)
-    'Rendez-vous', // Corresponds to Appointments (index 1)
-    '', // Empty for PatientsList, as it has its own title (index 2)
+    'Tableau de bord',
+    'Rendez-vous',
+    '',
   ];
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      // If the selected index is not the PatientsList (now index 2), clear the search filter
       if (index != 2) {
         Provider.of<PatientProvider>(context, listen: false).filterPatients('');
       }
@@ -56,7 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onDisconnect() async {
-    await DatabaseHelper.instance.backupDatabase();
+    // Note: Local database backup is not typically applicable for Supabase.
+    // If you have a custom backup process or need to clear local Supabase cache on logout,
+    // implement that here. Otherwise, you can remove this line.
+    // await DatabaseHelper.instance.backupDatabase(); // Removed or commented out as per Supabase context
+    // For Supabase logout, you should call:
+    await Supabase.instance.client.auth.signOut();
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -85,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      // Removed AppBar from HomeScreen, as each screen will manage its own.
       body: isSmallScreen
           ? _widgetOptions[_selectedIndex]
           : Row(
@@ -124,7 +125,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           onDestinationSelected: _onItemTapped,
                           labelType: NavigationRailLabelType.all,
                           backgroundColor: Colors.white,
-                          // 移除elevation属性以消除阴影
                           selectedIconTheme: const IconThemeData(
                             color: Colors.white,
                             size: 28,
@@ -144,7 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           groupAlignment: 0.0,
                           destinations: [
-                            // First icon: Dashboard
                             NavigationRailDestination(
                               icon: Container(
                                 padding: const EdgeInsets.all(12),
@@ -166,11 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: const Icon(Icons.bar_chart_rounded),
                               ),
                               label: Text(
-                                _appBarTitles[0], // Dashboard
+                                _appBarTitles[0],
                                 textAlign: TextAlign.center,
                               ),
                             ),
-                            // Second icon: Appointments
                             NavigationRailDestination(
                               icon: Container(
                                 padding: const EdgeInsets.all(12),
@@ -194,11 +192,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               label: Text(
-                                _appBarTitles[1], // Appointments
+                                _appBarTitles[1],
                                 textAlign: TextAlign.center,
                               ),
                             ),
-                            // Last icon: Patients
                             NavigationRailDestination(
                               icon: Container(
                                 padding: const EdgeInsets.all(12),
@@ -219,8 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: const Icon(Icons.person_rounded),
                               ),
-                              label: Text(
-                                'Patients', // Patients
+                              label: const Text(
+                                'Patients',
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -266,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: isSmallScreen
           ? Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Set background color to white
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -277,29 +274,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: BottomNavigationBar(
                 items: <BottomNavigationBarItem>[
-                  // Reordered: Dashboard, Appointments, Patients
                   BottomNavigationBarItem(
                     icon: Container(
-                      padding: const EdgeInsets.all(
-                        8,
-                      ), // Smaller padding for bottom nav
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _selectedIndex == 0
                             ? Colors.teal.shade700
                             : Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(
-                          12,
-                        ), // Match rail's border radius
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.bar_chart_outlined,
                         color: _selectedIndex == 0
                             ? Colors.white
                             : Colors.teal.shade700,
-                        size: 24, // Consistent icon size
+                        size: 24,
                       ),
                     ),
-                    label: _appBarTitles[0], // Dashboard
+                    label: _appBarTitles[0],
                   ),
                   BottomNavigationBarItem(
                     icon: Container(
@@ -318,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 24,
                       ),
                     ),
-                    label: _appBarTitles[1], // Appointments
+                    label: _appBarTitles[1],
                   ),
                   BottomNavigationBarItem(
                     icon: Container(
@@ -337,30 +329,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 24,
                       ),
                     ),
-                    label: 'Patients', // Patients
+                    label: 'Patients',
                   ),
                 ],
                 currentIndex: _selectedIndex,
                 onTap: _onItemTapped,
-                backgroundColor: Colors
-                    .transparent, // Make transparent as container provides color
-                elevation: 0, // Remove default elevation
-                type: BottomNavigationBarType
-                    .fixed, // Ensure all labels are visible
-                // Customizing label styles to match NavigationRail
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                type: BottomNavigationBarType.fixed,
                 selectedLabelStyle: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w600, // Matching font weight
-                  color: Colors.teal.shade700, // Color for selected label
-                  fontSize: 12, // Consistent font size
+                  fontWeight: FontWeight.w600,
+                  color: Colors.teal.shade700,
+                  fontSize: 12,
                 ),
                 unselectedLabelStyle: GoogleFonts.montserrat(
-                  color: Colors.grey.shade600, // Matching unselected color
-                  fontSize: 11, // Consistent font size
+                  color: Colors.grey.shade600,
+                  fontSize: 11,
                 ),
-                selectedItemColor:
-                    Colors.transparent, // Icons are handled by containers
-                unselectedItemColor:
-                    Colors.transparent, // Icons are handled by containers
+                selectedItemColor: Colors.transparent,
+                unselectedItemColor: Colors.transparent,
               ),
             )
           : null,

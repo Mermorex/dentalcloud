@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
+import 'signup_screen.dart'; // Import the new signup screen
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -20,7 +22,6 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _errorMessage;
   String? _serverIp; // To store the server IP
 
-  // Define the PORT here, make sure it matches the PORT in your run.bat file
   static const String SERVER_PORT = '8000';
 
   @override
@@ -29,33 +30,25 @@ class _AuthScreenState extends State<AuthScreen> {
     _loadServerIp();
   }
 
-  // This method extracts the server IP from the URL query parameters
   void _loadServerIp() {
-    // Check if running on the web
     if (html.window.location.protocol.startsWith('http')) {
       try {
         final uri = Uri.parse(html.window.location.href);
         final ip = uri.queryParameters['serverIp'];
         setState(() {
           _serverIp = ip;
-          print('[AuthScreen] Server IP from URL: $_serverIp'); // Enhanced log
+          print('[AuthScreen] Server IP from URL: $_serverIp');
         });
       } catch (e) {
-        print(
-          '[AuthScreen] Error parsing URL or extracting serverIp: $e',
-        ); // Log any parsing errors
+        print('[AuthScreen] Error parsing URL or extracting serverIp: $e');
         setState(() {
-          _serverIp = null; // Ensure it's null on error
+          _serverIp = null;
         });
       }
     } else {
       print(
         '[AuthScreen] Not running in a web environment or protocol is not http/https.',
-      ); // Log if not web
-      // For testing non-web, you could hardcode an IP here temporarily:
-      // setState(() {
-      //   _serverIp = '192.168.1.14';
-      // });
+      );
     }
   }
 
@@ -69,29 +62,37 @@ class _AuthScreenState extends State<AuthScreen> {
       _errorMessage = null;
     });
 
-    // Hardcoded username and password for a single admin
-    const String defaultUsername = 'admin';
-    const String defaultPassword = 'admin';
+    try {
+      final AuthResponse res = await Supabase.instance.client.auth
+          .signInWithPassword(
+            email: _usernameController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
-    if (_usernameController.text == defaultUsername &&
-        _passwordController.text == defaultPassword) {
-      // Simulate a network delay for login
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+      if (res.user != null) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Login failed. Please check your credentials.';
+        });
       }
-    } else {
+    } on AuthException catch (e) {
       setState(() {
-        _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect.';
+        _errorMessage = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override
@@ -103,13 +104,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-      '[AuthScreen] Building widget. Current _serverIp: $_serverIp',
-    ); // Log on every build
+    print('[AuthScreen] Building widget. Current _serverIp: $_serverIp');
     return Scaffold(
       body: Stack(
         children: [
-          // Main content (your existing login form)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -127,17 +125,12 @@ class _AuthScreenState extends State<AuthScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset(
-                        'assets/images/tooth_logo.png', // Ensure this asset exists and path is correct
+                        'assets/images/tooth_logo.png',
                         height: 120,
                         width: 120,
                         errorBuilder: (context, error, stackTrace) {
-                          print(
-                            '[AuthScreen] Error loading image: $error',
-                          ); // Log image loading errors
-                          return const Icon(
-                            Icons.broken_image,
-                            size: 120,
-                          ); // Fallback icon
+                          print('[AuthScreen] Error loading image: $error');
+                          return const Icon(Icons.broken_image, size: 120);
                         },
                       ),
                       const SizedBox(height: 32),
@@ -158,16 +151,15 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Removed the QR code from here
                       SizedBox(
                         width: 350.0,
                         child: TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
-                            labelText: 'Nom d\'utilisateur',
-                            hintText: 'Entrez votre nom d\'utilisateur',
+                            labelText: 'Email',
+                            hintText: 'Entrez votre email',
                             prefixIcon: Icon(
-                              Icons.person,
+                              Icons.email,
                               color: Colors.teal.shade600,
                             ),
                             border: OutlineInputBorder(
@@ -183,7 +175,12 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre nom d\'utilisateur.';
+                              return 'Veuillez entrer votre email.';
+                            }
+                            if (!RegExp(
+                              r'^[^@]+@[^@]+\.[^@]+',
+                            ).hasMatch(value)) {
+                              return 'Veuillez entrer une adresse email valide.';
                             }
                             return null;
                           },
@@ -244,7 +241,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           : SizedBox(
                               width: 350.0,
                               child: ElevatedButton(
-                                onPressed: _submit,
+                                onPressed: _submit, // Existing login method
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.teal,
                                   foregroundColor: Colors.white,
@@ -266,18 +263,34 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                               ),
                             ),
+                      const SizedBox(height: 20), // Added spacing
+                      TextButton(
+                        onPressed: () {
+                          // Navigate to the signup screen
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SignUpScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Pas encore de compte ? S\'inscrire',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.teal,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          // QR Code positioned explicitly in the top right corner
-          // This widget only renders IF _serverIp is not null and not empty
           if (_serverIp != null && _serverIp!.isNotEmpty)
             Positioned(
-              top: 20, // Distance from the top edge of the screen
-              right: 20, // Distance from the right edge of the screen
+              top: 20,
+              right: 20,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -292,8 +305,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
-                  mainAxisSize:
-                      MainAxisSize.min, // Essential for tight wrapping
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Scannez pour mobile:',
@@ -307,13 +319,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     QrImageView(
                       data: 'http://$_serverIp:$SERVER_PORT',
                       version: QrVersions.auto,
-                      size: 100.0, // Control QR code size
+                      size: 100.0,
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.teal.shade800,
                       errorStateBuilder: (cxt, err) {
-                        print(
-                          '[AuthScreen] QrImageView Error: $err',
-                        ); // Log QR error
+                        print('[AuthScreen] QrImageView Error: $err');
                         return Center(
                           child: Text(
                             "Erreur QR",
@@ -330,7 +340,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     Text(
                       'http://$_serverIp:$SERVER_PORT',
                       style: GoogleFonts.montserrat(
-                        fontSize: 9, // Smaller font for URL
+                        fontSize: 9,
                         color: Colors.grey.shade600,
                       ),
                       textAlign: TextAlign.center,
@@ -339,7 +349,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
             ),
-          // No 'else' block here. If _serverIp is not available, nothing related to QR code displays.
         ],
       ),
     );

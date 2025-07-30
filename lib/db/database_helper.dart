@@ -46,9 +46,14 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deletePatient(String id) async {
+  Future<int> deletePatient(String id, String clientId) async {
+    // Added clientId
     try {
-      await _supabase.from('patients').delete().eq('id', id);
+      await _supabase
+          .from('patients')
+          .delete()
+          .eq('id', id)
+          .eq('client_id', clientId);
       return 1;
     } catch (e) {
       print('Error deleting patient: $e');
@@ -56,13 +61,18 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Patient>> getPatientsWithVisitCount() async {
+  Future<List<Patient>> getPatientsWithVisitCount(String clientId) async {
+    // Added clientId
     try {
       final patientData = await _supabase
           .from('patients')
           .select('*')
+          .eq('client_id', clientId) // Filter by client_id
           .order('name', ascending: true);
-      final visitData = await _supabase.from('visits').select('patient_id');
+      final visitData = await _supabase
+          .from('visits')
+          .select('patient_id')
+          .eq('client_id', clientId); // Filter by client_id
 
       final Map<String, int> visitCounts = {};
       for (var visit in visitData) {
@@ -80,11 +90,13 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Patient>> getAllPatients() async {
+  Future<List<Patient>> getAllPatients(String clientId) async {
+    // Added clientId
     try {
       final response = await _supabase
           .from('patients')
           .select('*')
+          .eq('client_id', clientId) // Filter by client_id
           .order('name', ascending: true);
       return response.map((e) => Patient.fromMap(e)).toList();
     } catch (e) {
@@ -93,13 +105,14 @@ class DatabaseHelper {
     }
   }
 
-  // NEW: getPatientById method
-  Future<Patient?> getPatientById(String id) async {
+  Future<Patient?> getPatientById(String id, String clientId) async {
+    // Added clientId
     try {
       final response = await _supabase
           .from('patients')
           .select('*')
           .eq('id', id)
+          .eq('client_id', clientId) // Filter by client_id
           .single();
       if (response.isNotEmpty) {
         return Patient.fromMap(response);
@@ -146,9 +159,14 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deleteVisit(String id) async {
+  Future<int> deleteVisit(String id, String clientId) async {
+    // Added clientId
     try {
-      await _supabase.from('visits').delete().eq('id', id);
+      await _supabase
+          .from('visits')
+          .delete()
+          .eq('id', id)
+          .eq('client_id', clientId);
       return 1;
     } catch (e) {
       print('Error deleting visit: $e');
@@ -156,12 +174,17 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Visit>> getVisitsForPatient(String patientId) async {
+  Future<List<Visit>> getVisitsForPatient(
+    String patientId,
+    String clientId,
+  ) async {
+    // Added clientId
     try {
       final response = await _supabase
           .from('visits')
           .select('*')
           .eq('patient_id', patientId)
+          .eq('client_id', clientId) // Filter by client_id
           .order('date', ascending: false)
           .order('time', ascending: false);
       return response.map((e) => Visit.fromMap(e)).toList();
@@ -189,11 +212,13 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Appointment>> getAllAppointments() async {
+  Future<List<Appointment>> getAllAppointments(String clientId) async {
+    // Added clientId
     try {
       final response = await _supabase
           .from('appointments')
           .select('*, patients!inner(name)')
+          .eq('client_id', clientId) // Filter by client_id
           .order('date', ascending: true)
           .order('time', ascending: true);
 
@@ -212,12 +237,17 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Appointment>> getAppointmentsForPatient(String patientId) async {
+  Future<List<Appointment>> getAppointmentsForPatient(
+    String patientId,
+    String clientId,
+  ) async {
+    // Added clientId
     try {
       final response = await _supabase
           .from('appointments')
           .select('*, patients!inner(name)')
           .eq('patient_id', patientId)
+          .eq('client_id', clientId) // Filter by client_id
           .order('date', ascending: true)
           .order('time', ascending: true);
 
@@ -253,9 +283,14 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deleteAppointment(String id) async {
+  Future<int> deleteAppointment(String id, String clientId) async {
+    // Added clientId
     try {
-      await _supabase.from('appointments').delete().eq('id', id);
+      await _supabase
+          .from('appointments')
+          .delete()
+          .eq('id', id)
+          .eq('client_id', clientId);
       return 1;
     } catch (e) {
       print('Error deleting appointment: $e');
