@@ -2,61 +2,54 @@
 import 'package:uuid/uuid.dart'; // Import uuid package
 
 class Appointment {
-  String? id; // Changed from int? to String?
-  final String patientId; // Changed from int to String
+  String? id;
+  final String patientId;
   final String date;
   final String time;
   final String notes;
   final String status;
-  String? patientName; // Added for convenience when fetching with join
+  String? patientName;
+  final String? clientId; // Ensure this is present
 
   Appointment({
-    String? id, // Make ID nullable to allow for auto-generation
+    String? id,
     required this.patientId,
     required this.date,
     required this.time,
     required this.notes,
     this.status = 'Scheduled',
     this.patientName,
-  }) : id = id ?? const Uuid().v4(); // Generate UUID if not provided
+    this.clientId, // Ensure this is present in the constructor
+  }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'patient_id': patientId, // Changed to snake_case to match DB
+      'patient_id': patientId,
       'date': date,
       'time': time,
       'notes': notes,
       'status': status,
-    };
-  }
-
-  // New method for inserting with a generated ID (redundant with constructor, but kept for consistency)
-  Map<String, dynamic> toMapWithId(String newId) {
-    return {
-      'id': newId,
-      'patient_id': patientId, // Changed to snake_case to match DB
-      'date': date,
-      'time': time,
-      'notes': notes,
-      'status': status,
+      'client_id': clientId, // Ensure this is in toMap
     };
   }
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
     return Appointment(
-      id: map['id']?.toString(), // Ensure id is String
-      patientId: map['patient_id'] as String, // Read from snake_case
+      id: map['id']?.toString(),
+      patientId: map['patient_id'] as String,
       date: map['date'] as String,
       time: map['time'] as String,
       notes: map['notes'] as String,
       status: map['status'] as String,
-      patientName: map['patientName']
-          ?.toString(), // Assuming patientName might be fetched via join
+      patientName: map['patients'] != null && map['patients'] is Map
+          ? (map['patients'] as Map)['name']
+          : null, // Correctly handle nested patient data for join
+      clientId: map['client_id'] as String?, // Ensure this is in fromMap
     );
   }
 
-  // If you need a copyWith method, include it here:
+  // Add the copyWith method here
   Appointment copyWith({
     String? id,
     String? patientId,
@@ -65,6 +58,7 @@ class Appointment {
     String? notes,
     String? status,
     String? patientName,
+    String? clientId, // Add clientId here
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -74,6 +68,7 @@ class Appointment {
       notes: notes ?? this.notes,
       status: status ?? this.status,
       patientName: patientName ?? this.patientName,
+      clientId: clientId ?? this.clientId, // Set clientId here
     );
   }
 }

@@ -1,8 +1,8 @@
 // lib/models/patient.dart
-import 'package:uuid/uuid.dart'; // Ensure uuid package is imported
+import 'package:uuid/uuid.dart';
 
 class Patient {
-  final String id; // Changed from int to String
+  final String id;
   final String name;
   final int age;
   final String gender;
@@ -26,10 +26,11 @@ class Patient {
   final String? oralHygieneHabits;
   final String? lastDentalVisit;
   final String? lastXRay;
-  final int? visitCount; // New field for visit count
+  final int? visitCount;
+  final String? clientId; // Ensure this is nullable (String?)
 
   Patient({
-    String? id, // Made optional and nullable to generate UUID if not provided
+    String? id,
     required this.name,
     required this.age,
     required this.gender,
@@ -53,7 +54,8 @@ class Patient {
     this.oralHygieneHabits,
     this.lastDentalVisit,
     this.lastXRay,
-    this.visitCount, // Keep visitCount as it's from patient_provider
+    this.visitCount,
+    this.clientId, // Ensure this is a normal optional parameter (no 'required')
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -63,31 +65,27 @@ class Patient {
       'age': age,
       'gender': gender,
       'phone': phone,
-      'date_of_birth': dateOfBirth, // Changed to snake_case
+      'date_of_birth': dateOfBirth,
       'email': email,
       'address': address,
-      'emergency_contact_name': emergencyContactName, // Changed to snake_case
-      'emergency_contact_phone': emergencyContactPhone, // Changed to snake_case
-      'primary_language': primaryLanguage, // Changed to snake_case
+      'emergency_contact_name': emergencyContactName,
+      'emergency_contact_phone': emergencyContactPhone,
+      'primary_language': primaryLanguage,
       'alerts': alerts,
-      'systemic_diseases': systemicDiseases, // Changed to snake_case
+      'systemic_diseases': systemicDiseases,
       'medications': medications,
       'allergies': allergies,
-      'past_surgeries_hospitalizations':
-          pastSurgeriesHospitalizations, // Changed to snake_case
-      'lifestyle_factors': lifestyleFactors, // Changed to snake_case
-      // IMPORTANT: Please verify if your column is 'pregnancy_lactation_status' or 'pregnancy_lactation_statusb'
-      // If it's 'pregnancy_lactation_statusb' in your DB, change the key below:
-      'pregnancy_lactation_status':
-          pregnancyLactationStatus, // Changed to snake_case
-      'chief_complaint': chiefComplaint, // Changed to snake_case
-      'past_dental_treatments': pastDentalTreatments, // Changed to snake_case
-      'previous_dental_problems':
-          previousDentalProblems, // Changed to snake_case
-      'oral_hygiene_habits': oralHygieneHabits, // Changed to snake_case
-      'last_dental_visit': lastDentalVisit, // Changed to snake_case
-      'last_xray': lastXRay, // Changed to snake_case
-      'visit_count': visitCount, // Changed to snake_case (if stored in DB)
+      'past_surgeries_hospitalizations': pastSurgeriesHospitalizations,
+      'lifestyle_factors': lifestyleFactors,
+      'pregnancy_lactation_status': pregnancyLactationStatus,
+      'chief_complaint': chiefComplaint,
+      'past_dental_treatments': pastDentalTreatments,
+      'previous_dental_problems': previousDentalProblems,
+      'oral_hygiene_habits': oralHygieneHabits,
+      'last_dental_visit': lastDentalVisit,
+      'last_xray': lastXRay,
+      'visit_count': visitCount,
+      'client_id': clientId, // Included in toMap for the database column
     };
   }
 
@@ -98,41 +96,28 @@ class Patient {
       age: map['age'] as int,
       gender: map['gender'] as String,
       phone: map['phone'] as String,
-      dateOfBirth: map['date_of_birth'] as String?, // Changed to snake_case
+      dateOfBirth: map['date_of_birth'] as String?,
       email: map['email'] as String?,
       address: map['address'] as String?,
-      emergencyContactName:
-          map['emergency_contact_name'] as String?, // Changed to snake_case
-      emergencyContactPhone:
-          map['emergency_contact_phone'] as String?, // Changed to snake_case
-      primaryLanguage:
-          map['primary_language'] as String?, // Changed to snake_case
+      emergencyContactName: map['emergency_contact_name'] as String?,
+      emergencyContactPhone: map['emergency_contact_phone'] as String?,
+      primaryLanguage: map['primary_language'] as String?,
       alerts: map['alerts'] as String?,
-      systemicDiseases:
-          map['systemic_diseases'] as String?, // Changed to snake_case
+      systemicDiseases: map['systemic_diseases'] as String?,
       medications: map['medications'] as String?,
       allergies: map['allergies'] as String?,
       pastSurgeriesHospitalizations:
-          map['past_surgeries_hospitalizations']
-              as String?, // Changed to snake_case
-      lifestyleFactors:
-          map['lifestyle_factors'] as String?, // Changed to snake_case
-      // IMPORTANT: Please verify if your column is 'pregnancy_lactation_status' or 'pregnancy_lactation_statusb'
-      // If it's 'pregnancy_lactation_statusb' in your DB, change the key below:
-      pregnancyLactationStatus:
-          map['pregnancy_lactation_status'] as String?, // Changed to snake_case
-      chiefComplaint:
-          map['chief_complaint'] as String?, // Changed to snake_case
-      pastDentalTreatments:
-          map['past_dental_treatments'] as String?, // Changed to snake_case
-      previousDentalProblems:
-          map['previous_dental_problems'] as String?, // Changed to snake_case
-      oralHygieneHabits:
-          map['oral_hygiene_habits'] as String?, // Changed to snake_case
-      lastDentalVisit:
-          map['last_dental_visit'] as String?, // Changed to snake_case
-      lastXRay: map['last_xray'] as String?, // Changed to snake_case
-      visitCount: map['visit_count'] as int?, // Changed to snake_case
+          map['past_surgeries_hospitalizations'] as String?,
+      lifestyleFactors: map['lifestyle_factors'] as String?,
+      pregnancyLactationStatus: map['pregnancy_lactation_status'] as String?,
+      chiefComplaint: map['chief_complaint'] as String?,
+      pastDentalTreatments: map['past_dental_treatments'] as String?,
+      previousDentalProblems: map['previous_dental_problems'] as String?,
+      oralHygieneHabits: map['oral_hygiene_habits'] as String?,
+      lastDentalVisit: map['last_dental_visit'] as String?,
+      lastXRay: map['last_xray'] as String?,
+      visitCount: map['visit_count'] as int?,
+      clientId: map['client_id'] as String?, // Reads from the database column
     );
   }
 
@@ -162,6 +147,7 @@ class Patient {
     String? lastDentalVisit,
     String? lastXRay,
     int? visitCount,
+    String? clientId, // Ensure this is nullable here too
   }) {
     return Patient(
       id: id ?? this.id,
@@ -193,6 +179,8 @@ class Patient {
       lastDentalVisit: lastDentalVisit ?? this.lastDentalVisit,
       lastXRay: lastXRay ?? this.lastXRay,
       visitCount: visitCount ?? this.visitCount,
+      clientId:
+          clientId ?? this.clientId, // Ensure proper handling of nullability
     );
   }
 }
