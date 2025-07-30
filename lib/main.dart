@@ -114,9 +114,9 @@ class _MyAppState extends State<MyApp> {
           );
         }
         // Add your SignUpScreen route here
-        else if (settings.name == '/signup') {
+        else if (settings.name == '/login') {
           return MaterialPageRoute(
-            builder: (context) => const SignUpScreen(),
+            builder: (context) => const AuthScreen(),
             settings: settings,
           );
         }

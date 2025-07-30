@@ -9,12 +9,12 @@ import 'package:table_calendar/table_calendar.dart';
 import 'add_appointment_screen.dart'; // Import AddAppointmentScreen
 import 'package:dental/widgets/main_button.dart'; // Assuming you have a MainButton widget
 
-// Create a GlobalKey for AppointmentsListScreenState to access its state from Home Screen
+// This is the SINGLE, GLOBAL declaration of the GlobalKey that both HomeScreen and AppointmentsListScreen will use.
 final GlobalKey<_AppointmentsListScreenState> appointmentsListScreenKey =
-    GlobalKey();
+    GlobalKey(); //
 
 class AppointmentsListScreen extends StatefulWidget {
-  const AppointmentsListScreen({Key? key}) : super(key: key);
+  const AppointmentsListScreen({Key? key}) : super(key: key); //
 
   @override
   State<AppointmentsListScreen> createState() => _AppointmentsListScreenState();
@@ -35,7 +35,7 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
 
   Map<DateTime, List<Appointment>> _events = {};
 
-  // Getter to expose the currently selected day to external widgets (like HomeScreen)
+  // Getter to expose the currently selected day to external widgets
   DateTime? get selectedDayForAddAppointment => _selectedDay;
 
   @override
@@ -176,12 +176,10 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0, // Remove shadow for a flatter look
-        toolbarHeight: 80, // Adjust height as needed
+        elevation: 0,
+        toolbarHeight: 80,
         title: Padding(
-          padding: const EdgeInsets.only(
-            left: 0.0,
-          ), // Adjust padding for title if necessary
+          padding: const EdgeInsets.only(left: 0.0),
           child: Text(
             'Rendez-vous',
             style: GoogleFonts.montserrat(
@@ -202,6 +200,7 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
               ),
               onPressed: () async {
                 DateTime? initialAppointmentDate;
+                // This will now correctly access the state because it refers to the single global key
                 if (appointmentsListScreenKey.currentState != null) {
                   initialAppointmentDate = appointmentsListScreenKey
                       .currentState!
@@ -488,6 +487,7 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
                 heroTag: 'addAppointmentFab',
                 onPressed: () async {
                   DateTime? initialAppointmentDate;
+                  // This will now correctly access the state because it refers to the single global key
                   if (appointmentsListScreenKey.currentState != null) {
                     initialAppointmentDate = appointmentsListScreenKey
                         .currentState!
@@ -598,35 +598,30 @@ class AppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color statusColor = _getStatusColor(appointment.status);
     final Color lightStatusColor = _getLightStatusColor(appointment.status);
-    final isTablet =
-        MediaQuery.of(context).size.width >= 600; // Determine if it's a tablet
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Container(
-      // Changed from Card to Container
       margin: EdgeInsets.symmetric(
         vertical: 8,
         horizontal: isTablet ? 16.0 : 16,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20), // Consistent border radius
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Consistent shadow
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 1,
-        ), // Softer border
+        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
       ),
       child: InkWell(
-        onTap: onEdit, // Using onEdit as the tap action for the card
+        onTap: onEdit,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16), // Consistent padding
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -637,10 +632,9 @@ class AppointmentCard extends StatelessWidget {
                     child: Text(
                       patientName,
                       style: GoogleFonts.montserrat(
-                        fontWeight:
-                            FontWeight.w600, // Slightly lighter than bold
-                        fontSize: isTablet ? 20 : 18, // Adjusted font size
-                        color: Colors.grey.shade800, // Consistent color
+                        fontWeight: FontWeight.w600,
+                        fontSize: isTablet ? 20 : 18,
+                        color: Colors.grey.shade800,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -653,29 +647,26 @@ class AppointmentCard extends StatelessWidget {
                           Icons.edit,
                           size: isTablet ? 22 : 20,
                           color: Colors.teal.shade600,
-                        ), // Adjusted size and color
+                        ),
                         onPressed: onEdit,
-                        visualDensity:
-                            VisualDensity.compact, // Reduce button padding
+                        visualDensity: VisualDensity.compact,
                       ),
                       IconButton(
                         icon: Icon(
                           Icons.delete,
                           size: isTablet ? 22 : 20,
                           color: Colors.red.shade600,
-                        ), // Adjusted size and color
+                        ),
                         onPressed: onDelete,
-                        visualDensity:
-                            VisualDensity.compact, // Reduce button padding
+                        visualDensity: VisualDensity.compact,
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 10), // Adjusted spacing
+              const SizedBox(height: 10),
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center, // Align icons vertically
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.calendar_today,
@@ -684,14 +675,14 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${appointment.date}', // Date only, "Date:" prefix removed
+                    '${appointment.date}',
                     style: GoogleFonts.montserrat(
                       fontSize: isTablet ? 16 : 14,
                       color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500, // Consistent font weight
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 16), // Increased spacing
+                  const SizedBox(width: 16),
                   Icon(
                     Icons.access_time,
                     size: isTablet ? 18 : 16,
@@ -699,7 +690,7 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${appointment.time}', // Time only, "Heure:" prefix removed
+                    '${appointment.time}',
                     style: GoogleFonts.montserrat(
                       fontSize: isTablet ? 16 : 14,
                       color: Colors.grey.shade700,
@@ -717,13 +708,13 @@ class AppointmentCard extends StatelessWidget {
                       Icons.notes,
                       size: isTablet ? 18 : 16,
                       color: Colors.grey.shade600,
-                    ), // Adjusted icon size
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        appointment.notes, // "Notes:" prefix removed
+                        appointment.notes,
                         style: GoogleFonts.montserrat(
-                          fontSize: isTablet ? 15 : 13, // Adjusted font size
+                          fontSize: isTablet ? 15 : 13,
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.w500,
                         ),
@@ -736,27 +727,22 @@ class AppointmentCard extends StatelessWidget {
               const SizedBox(height: 12),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 10 : 8, // Adjusted padding
+                  horizontal: isTablet ? 10 : 8,
                   vertical: isTablet ? 6 : 4,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      lightStatusColor, // Use lightStatusColor for background
-                  borderRadius: BorderRadius.circular(
-                    16,
-                  ), // Consistent border radius
+                  color: lightStatusColor,
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: statusColor.withOpacity(0.5),
                     width: 1,
-                  ), // Border color with opacity
+                  ),
                 ),
                 child: Text(
-                  _getTranslatedStatus(
-                    appointment.status,
-                  ), // "Statut:" prefix removed
+                  _getTranslatedStatus(appointment.status),
                   style: GoogleFonts.montserrat(
-                    fontSize: isTablet ? 14 : 12, // Adjusted font size
-                    fontWeight: FontWeight.w600, // Consistent font weight
+                    fontSize: isTablet ? 14 : 12,
+                    fontWeight: FontWeight.w600,
                     color: statusColor.darken(0.1),
                   ),
                 ),

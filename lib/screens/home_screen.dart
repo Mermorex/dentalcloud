@@ -1,24 +1,17 @@
 // lib/screens/home_screen.dart
-import 'package:dental/screens/patient_detail_screen.dart';
 import 'package:dental/screens/patients_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/patient_provider.dart';
-import '../models/patient.dart';
-import 'add_patient_screen.dart';
-import 'appointments_list_screen.dart';
+// Import appointments_list_screen.dart to access its GlobalKey
+import 'appointments_list_screen.dart'; //
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
-import '../models/visit.dart';
-import '../db/database_helper.dart'; // Added this line for DatabaseHelper.instance.backupDatabase
 import 'auth_screen.dart';
-import 'package:dental/widgets/main_button.dart';
-import 'add_appointment_screen.dart';
 
-// Define a GlobalKey for AppointmentsListScreen
-final GlobalKey<State<AppointmentsListScreen>> appointmentsListScreenKey =
-    GlobalKey<State<AppointmentsListScreen>>();
+// REMOVE THIS LINE:
+// final GlobalKey<State<AppointmentsListScreen>> appointmentsListScreenKey = GlobalKey<State<AppointmentsListScreen>>();
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -33,7 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late final List<Widget> _widgetOptions = <Widget>[
     const DashboardScreen(),
-    AppointmentsListScreen(key: appointmentsListScreenKey),
+    // Use the GlobalKey imported from appointments_list_screen.dart
+    AppointmentsListScreen(key: appointmentsListScreenKey), //
     const PatientsList(),
   ];
 
@@ -53,11 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onDisconnect() async {
-    // Note: Local database backup is not typically applicable for Supabase.
-    // If you have a custom backup process or need to clear local Supabase cache on logout,
-    // implement that here. Otherwise, you can remove this line.
-    // await DatabaseHelper.instance.backupDatabase(); // Removed or commented out as per Supabase context
-    // For Supabase logout, you should call:
     await Supabase.instance.client.auth.signOut();
     Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(

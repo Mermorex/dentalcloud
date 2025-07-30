@@ -314,6 +314,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     );
   }
 
+  // Modified _buildSection to include card-like styling
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -322,8 +323,20 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(title),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
+        Container(
+          margin: const EdgeInsets.only(bottom: 20.0), // Space between sections
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20.0), // Inner padding for the card
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -335,273 +348,274 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text(
-          'Ajouter une Nouvelle Visite',
-          style: GoogleFonts.montserrat(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        backgroundColor: Colors.white,
+        elevation: 0, // Remove shadow for a flatter look
+        toolbarHeight: 80, // Adjust height as needed
+        title: Padding(
+          padding: const EdgeInsets.only(
+            left: 0.0,
+          ), // Adjust padding for title if necessary
+          child: Text(
+            'Ajouter une Nouvelle Visite', // Add new patient
+            style: GoogleFonts.montserrat(
+              fontSize:
+                  (isTablet ? 32 : 24) * textScaleFactor, // Adjusted font size
+              fontWeight: FontWeight.bold,
+              color: Colors.teal.shade800,
+            ),
           ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Colors.teal.shade600,
+              size: isTablet ? 32 : 28,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Retour',
+          ),
         ),
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.teal.shade50, Colors.blue.shade50],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSection(
+                        title: 'Détails de la Visite',
+                        children: [
+                          _buildTextField(
+                            controller: _dateCtrl,
+                            labelText: 'Date de la visite',
+                            prefixIcon: const Icon(Icons.calendar_today),
+                            readOnly: true,
+                            onTap: () => _selectDate(context, _dateCtrl),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Veuillez entrer une date';
+                              }
+                              return null;
+                            },
+                            textInputAction: TextInputAction.next,
+                          ),
+                          _buildTextField(
+                            controller: _timeCtrl,
+                            labelText: 'Heure de la visite',
+                            prefixIcon: const Icon(Icons.access_time),
+                            readOnly: true,
+                            onTap: () => _selectTime(context, _timeCtrl),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Veuillez entrer une heure';
+                              }
+                              return null;
+                            },
+                            textInputAction: TextInputAction.next,
+                          ),
+                          _buildTextField(
+                            controller: _purposeCtrl,
+                            labelText: 'Motif',
+                            prefixIcon: const Icon(Icons.description),
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.next, // Changed
+                            // validator: (value) { // Removed validator
+                            //   if (value == null || value.isEmpty) {
+                            //     return 'Veuillez entrer le motif de la visite';
+                            //   }
+                            //   return null;
+                            // },
+                          ),
+                          _buildTextField(
+                            controller: _findingsCtrl,
+                            labelText: 'Constatations',
+                            prefixIcon: const Icon(Icons.search),
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.next, // Changed
+                            // validator: (value) { // Removed validator
+                            //   if (value == null || value.isEmpty) {
+                            //     return 'Veuillez entrer les constatations';
+                            //   }
+                            //   return null;
+                            // },
+                          ),
+                          _buildTextField(
+                            controller: _treatmentCtrl,
+                            labelText: 'Traitement',
+                            prefixIcon: const Icon(Icons.healing),
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.next, // Changed
+                            // validator: (value) { // Removed validator
+                            //   if (value == null || value.isEmpty) {
+                            //     return 'Veuillez entrer le traitement';
+                            //   }
+                            //   return null;
+                            // },
+                          ),
+                          _buildTextField(
+                            controller: _notesCtrl,
+                            labelText: 'Notes',
+                            prefixIcon: const Icon(Icons.note),
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.next, // Changed
+                          ),
+                          _buildTextField(
+                            controller: _nextVisitDateCtrl,
+                            labelText:
+                                'Date de la Prochaine Visite (Optionnel)',
+                            prefixIcon: const Icon(Icons.event_available),
+                            readOnly: true,
+                            onTap: () =>
+                                _selectDate(context, _nextVisitDateCtrl),
+                            textInputAction: TextInputAction
+                                .next, // Changed as there's another field now
+                          ),
+                          _buildTextField(
+                            // Added for next visit time
+                            controller: _nextVisitTimeCtrl,
+                            labelText:
+                                'Heure de la Prochaine Visite (Optionnel)',
+                            prefixIcon: const Icon(Icons.access_time),
+                            readOnly: true,
+                            onTap: () =>
+                                _selectTime(context, _nextVisitTimeCtrl),
+                            textInputAction: TextInputAction
+                                .done, // Last field in the section
+                          ),
+                        ],
+                      ),
+                      _buildSection(
+                        title: 'Informations de Paiement',
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _totalAmountCtrl,
+                                  labelText: 'Montant Total (Optionnel)',
+                                  prefixText:
+                                      'DT ', // Changed from '$' to 'DT '
+                                  prefixIcon: const Icon(Icons.attach_money),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  textInputAction: TextInputAction.next,
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      if (double.tryParse(value) == null) {
+                                        return 'Montant invalide';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _amountPaidCtrl,
+                                  labelText: 'Montant Payé (Optionnel)',
+                                  prefixText:
+                                      'DT ', // Changed from '$' to 'DT '
+                                  prefixIcon: const Icon(Icons.payments),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  enabled: !_isPaid,
+                                  textInputAction: TextInputAction.done,
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      final paid = double.tryParse(value);
+                                      final total = double.tryParse(
+                                        _totalAmountCtrl.text,
+                                      );
+                                      if (paid == null) {
+                                        return 'Montant invalide';
+                                      }
+                                      if (total != null && paid > total) {
+                                        return 'Ne peut dépasser le total';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween, // Distribute space
+                              children: [
+                                Text(
+                                  'Payé entièrement',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 16,
+                                    color: Colors.teal,
+                                  ),
+                                ),
+                                Switch(
+                                  value: _isPaid,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isPaid = value;
+                                      if (_isPaid) {
+                                        if (_totalAmountCtrl.text.isNotEmpty) {
+                                          _amountPaidCtrl.text =
+                                              _totalAmountCtrl.text;
+                                        }
+                                      } else {
+                                        _amountPaidCtrl.clear();
+                                      }
+                                    });
+                                  },
+                                  activeColor: Colors.teal,
+                                  inactiveThumbColor: Colors.grey,
+                                  inactiveTrackColor: Colors.grey.shade300,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 120),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildSection(
-                            title: 'Détails de la Visite',
-                            children: [
-                              _buildTextField(
-                                controller: _dateCtrl,
-                                labelText: 'Date de la visite',
-                                prefixIcon: const Icon(Icons.calendar_today),
-                                readOnly: true,
-                                onTap: () => _selectDate(context, _dateCtrl),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez entrer une date';
-                                  }
-                                  return null;
-                                },
-                                textInputAction: TextInputAction.next,
-                              ),
-                              _buildTextField(
-                                controller: _timeCtrl,
-                                labelText: 'Heure de la visite',
-                                prefixIcon: const Icon(Icons.access_time),
-                                readOnly: true,
-                                onTap: () => _selectTime(context, _timeCtrl),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez entrer une heure';
-                                  }
-                                  return null;
-                                },
-                                textInputAction: TextInputAction.next,
-                              ),
-                              _buildTextField(
-                                controller: _purposeCtrl,
-                                labelText: 'Motif',
-                                prefixIcon: const Icon(Icons.description),
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                textInputAction:
-                                    TextInputAction.next, // Changed
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez entrer le motif de la visite';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              _buildTextField(
-                                controller: _findingsCtrl,
-                                labelText: 'Constatations',
-                                prefixIcon: const Icon(Icons.search),
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                textInputAction:
-                                    TextInputAction.next, // Changed
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez entrer les constatations';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              _buildTextField(
-                                controller: _treatmentCtrl,
-                                labelText: 'Traitement',
-                                prefixIcon: const Icon(Icons.healing),
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                textInputAction:
-                                    TextInputAction.next, // Changed
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Veuillez entrer le traitement';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              _buildTextField(
-                                controller: _notesCtrl,
-                                labelText: 'Notes',
-                                prefixIcon: const Icon(Icons.note),
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                textInputAction:
-                                    TextInputAction.next, // Changed
-                              ),
-                              _buildTextField(
-                                controller: _nextVisitDateCtrl,
-                                labelText:
-                                    'Date de la Prochaine Visite (Optionnel)',
-                                prefixIcon: const Icon(Icons.event_available),
-                                readOnly: true,
-                                onTap: () =>
-                                    _selectDate(context, _nextVisitDateCtrl),
-                                textInputAction: TextInputAction
-                                    .next, // Changed as there's another field now
-                              ),
-                              _buildTextField(
-                                // Added for next visit time
-                                controller: _nextVisitTimeCtrl,
-                                labelText:
-                                    'Heure de la Prochaine Visite (Optionnel)',
-                                prefixIcon: const Icon(Icons.access_time),
-                                readOnly: true,
-                                onTap: () =>
-                                    _selectTime(context, _nextVisitTimeCtrl),
-                                textInputAction: TextInputAction
-                                    .done, // Last field in the section
-                              ),
-                            ],
-                          ),
-                          _buildSection(
-                            title: 'Informations de Paiement',
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildTextField(
-                                      controller: _totalAmountCtrl,
-                                      labelText: 'Montant Total (Optionnel)',
-                                      prefixText: '\$',
-                                      prefixIcon: const Icon(
-                                        Icons.attach_money,
-                                      ),
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
-                                      textInputAction: TextInputAction.next,
-                                      validator: (value) {
-                                        if (value != null && value.isNotEmpty) {
-                                          if (double.tryParse(value) == null) {
-                                            return 'Montant invalide';
-                                          }
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _buildTextField(
-                                      controller: _amountPaidCtrl,
-                                      labelText: 'Montant Payé (Optionnel)',
-                                      prefixText: '\$',
-                                      prefixIcon: const Icon(Icons.payments),
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
-                                      enabled: !_isPaid,
-                                      textInputAction: TextInputAction.done,
-                                      validator: (value) {
-                                        if (value != null && value.isNotEmpty) {
-                                          final paid = double.tryParse(value);
-                                          final total = double.tryParse(
-                                            _totalAmountCtrl.text,
-                                          );
-                                          if (paid == null) {
-                                            return 'Montant invalide';
-                                          }
-                                          if (total != null && paid > total) {
-                                            return 'Ne peut dépasser le total';
-                                          }
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Checkbox(
-                                      value: _isPaid,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _isPaid = value ?? false;
-                                          if (_isPaid) {
-                                            if (_totalAmountCtrl
-                                                .text
-                                                .isNotEmpty) {
-                                              _amountPaidCtrl.text =
-                                                  _totalAmountCtrl.text;
-                                            }
-                                          } else {
-                                            _amountPaidCtrl.clear();
-                                          }
-                                        });
-                                      },
-                                      activeColor: Colors.teal,
-                                      checkColor: Colors.white,
-                                    ),
-                                    Text(
-                                      'Payé entièrement',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 16,
-                                        color: Colors.teal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 120),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: MainButton(
         onPressed: _saveVisit,
         label: 'Ajouter une visite',
         icon: Icons.add,
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        heroTag: 'addVisitSaveButton',
       ),
     );
   }

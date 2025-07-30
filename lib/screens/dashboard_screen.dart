@@ -1,10 +1,11 @@
-// lib/screens/dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/patient_provider.dart';
 import '../models/appointment.dart';
 import 'package:intl/intl.dart';
+// Import a package for local storage, e.g., shared_preferences
+// import 'package:shared_preferences/shared_preferences.dart'; // You'll need to add this to your pubspec.yaml
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -29,14 +30,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  void _handleDisconnect() {
-    // Implement your disconnect logic here.
-    // For example, navigate to a login screen or clear user session.
+  void _handleDisconnect() async {
+    // Made async to await SharedPreferences
+    // 1. Clear user session/authentication tokens
+    // Example using shared_preferences:
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.remove('user_token'); // Or whatever your token key is
+    // await prefs.clear(); // To clear all stored preferences
+
     print('User disconnected!');
-    // Example: Navigator.of(context).pushReplacementNamed('/login');
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Déconnexion réussie!')));
+
+    // 2. Navigate to a login screen
+    // Make sure '/login' is a defined route in your MaterialApp
+    Navigator.of(context).pushReplacementNamed('/login');
+    // If you don't have named routes, you can use:
+    // Navigator.of(context).pushReplacement(
+    //   MaterialPageRoute(builder: (context) => LoginScreen()), // Replace LoginScreen with your actual login screen widget
+    // );
   }
 
   @override

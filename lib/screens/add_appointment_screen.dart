@@ -1,4 +1,4 @@
-// lib/screens/add_appointment_screen.dart
+// add_appointment_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/appointment.dart';
@@ -7,11 +7,16 @@ import '../providers/patient_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/patient_search_sheet.dart'; // Import the new patient search sheet
 import 'package:intl/intl.dart'; // Add this import for DateFormat
+import '../widgets/main_button.dart'; // Import the MainButton widget
 
 class AddAppointmentScreen extends StatefulWidget {
-  final DateTime? initialDate; // Optional initial date
+  final DateTime?
+  initialDate; // Optional initial date passed from previous screen
 
-  const AddAppointmentScreen({super.key, this.initialDate}); // Constructor
+  const AddAppointmentScreen({
+    super.key,
+    this.initialDate,
+  }); // Constructor accepts initialDate
 
   @override
   State<AddAppointmentScreen> createState() => _AddAppointmentScreenState();
@@ -47,9 +52,17 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     super.initState();
     // Initialize date controller here, as it doesn't depend on context
     if (widget.initialDate != null) {
+      // <-- If an initial date was passed, use it
       _dateCtrl.text = DateFormat('yyyy-MM-dd').format(widget.initialDate!);
+      print(
+        'AddAppointmentScreen: Received initial date: ${widget.initialDate}',
+      ); // DEBUG PRINT
     } else {
+      // <-- Otherwise, default to today's date
       _dateCtrl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      print(
+        'AddAppointmentScreen: No initial date received, defaulting to today: ${DateTime.now()}',
+      ); // DEBUG PRINT
     }
     // _timeCtrl.text = TimeOfDay.now().format(context); // MOVED THIS LINE
   }
@@ -217,14 +230,18 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     }
   }
 
+  // Modified to show a dialog instead of a bottom sheet
   Future<void> _selectPatient() async {
-    final selectedPatient = await showModalBottomSheet<Patient>(
+    final selectedPatient = await showDialog<Patient>(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
-        return FractionallySizedBox(
-          heightFactor: 0.8,
-          child: PatientSearchSheet(),
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: PatientSearchSheet(
+            isDialog: true, // Pass a flag to indicate it's in a dialog
+          ),
         );
       },
     );
@@ -564,22 +581,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: MainButton(
         onPressed: _saveAppointment,
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        elevation: 8,
-        label: Text(
-          'Enregistrer le rendez-vous',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        icon: const Icon(Icons.save, size: 28),
+        label: 'Enregistrer le rendez-vous',
+        icon: Icons.save,
+        // You can customize other properties here if needed, e.g.:
+        // backgroundColor: Colors.green,
+        // foregroundColor: Colors.yellow,
+        // iconSize: 32.0,
+        // fontSize: 20.0,
       ),
     );
   }

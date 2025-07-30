@@ -5,7 +5,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
-import 'signup_screen.dart'; // Import the new signup screen
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -263,24 +262,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                               ),
                             ),
-                      const SizedBox(height: 20), // Added spacing
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to the signup screen
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SignUpScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Pas encore de compte ? S\'inscrire',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.teal,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
