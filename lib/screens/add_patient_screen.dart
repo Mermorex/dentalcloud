@@ -7,7 +7,7 @@ import '../models/patient.dart';
 import '../widgets/main_button.dart'; // Make sure this import is correct
 
 class AddPatientScreen extends StatefulWidget {
-  const AddPatientScreen({Key? key}) : super(key: key);
+  const AddPatientScreen({super.key});
 
   @override
   State<AddPatientScreen> createState() => _AddPatientScreenState();

@@ -13,7 +13,7 @@ class MainButton extends StatelessWidget {
   final Object? heroTag;
 
   const MainButton({
-    Key? key,
+    super.key,
     required this.label,
     this.onPressed,
     this.icon = Icons.add,
@@ -22,7 +22,7 @@ class MainButton extends StatelessWidget {
     this.iconSize = 28.0,
     this.fontSize = 18.0,
     this.heroTag,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/patient.dart';
 import '../models/visit.dart';
 import '../models/appointment.dart';
-import 'package:uuid/uuid.dart'; // For generating UUIDs for local inserts
+// For generating UUIDs for local inserts
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();

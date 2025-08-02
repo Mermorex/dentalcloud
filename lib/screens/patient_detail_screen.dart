@@ -16,8 +16,7 @@ import '../widgets/visit_card.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final Patient patient;
-  const PatientDetailScreen({required this.patient, Key? key})
-    : super(key: key);
+  const PatientDetailScreen({required this.patient, super.key});
 
   @override
   State<PatientDetailScreen> createState() => _PatientDetailScreenState();
@@ -27,10 +26,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     with SingleTickerProviderStateMixin {
   Future<List<Visit>>? _visitsFuture;
   late TabController _tabController;
+  late Patient
+  _currentPatient; // Add this line to hold the mutable patient object
 
   @override
   void initState() {
     super.initState();
+    _currentPatient = widget.patient; // Initialize with the patient from widget
     _fetchVisits();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabSelection);
@@ -52,12 +54,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   void _fetchVisits() {
     setState(() {
-      // <--- ADDED setState here
       _visitsFuture = Provider.of<PatientProvider>(
         context,
         listen: false,
       ).getVisitsForPatient(widget.patient.id);
-    }); // <--- ADDED setState here
+    });
   }
 
   Future<void> _confirmAndDeletePatient(
@@ -147,7 +148,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final patient = widget.patient;
+    // Use _currentPatient instead of widget.patient
+    final patient = _currentPatient;
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
@@ -229,16 +231,21 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                     size: isTablet ? 32 : 28,
                   ), // Consistent icon style
                   onPressed: () async {
-                    await Navigator.push(
+                    // Expect a result back from EditPatientScreen
+                    final updatedPatient = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => EditPatientScreen(patient: patient),
                       ),
                     );
                     if (!mounted) return;
-                    setState(() {
-                      _fetchVisits();
-                    });
+                    if (updatedPatient != null && updatedPatient is Patient) {
+                      setState(() {
+                        _currentPatient =
+                            updatedPatient; // Update the patient object
+                        _fetchVisits(); // Also refetch visits in case they were updated indirectly
+                      });
+                    }
                   },
                 ),
                 IconButton(

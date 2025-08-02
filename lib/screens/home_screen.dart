@@ -1,21 +1,15 @@
 // lib/screens/home_screen.dart
+import 'package:dental/screens/appointments_list_screen.dart';
 import 'package:dental/screens/patients_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/patient_provider.dart';
-// Import appointments_list_screen.dart to access its GlobalKey
-import 'appointments_list_screen.dart'; //
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
-import 'auth_screen.dart';
-
-// REMOVE THIS LINE:
-// final GlobalKey<State<AppointmentsListScreen>> appointmentsListScreenKey = GlobalKey<State<AppointmentsListScreen>>();
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
+  const HomeScreen({super.key});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -23,14 +17,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   static const int _patientLimit = 20;
-
   late final List<Widget> _widgetOptions = <Widget>[
     const DashboardScreen(),
-    // Use the GlobalKey imported from appointments_list_screen.dart
-    AppointmentsListScreen(key: appointmentsListScreenKey), //
+    const AppointmentsListScreen(),
     const PatientsList(),
   ];
-
   final List<String> _appBarTitles = const [
     'Tableau de bord',
     'Rendez-vous',
@@ -47,18 +38,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onDisconnect() async {
-    await Supabase.instance.client.auth.signOut();
-    Navigator.of(context).pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const AuthScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return child;
-        },
-        transitionDuration: Duration.zero,
-      ),
-      (Route<dynamic> route) => false,
-    );
+    try {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+      }
+
+      // Sign out from Supabase
+      await Supabase.instance.client.auth.signOut();
+
+      // Give a small delay to ensure local state is cleared
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Explicitly navigate to login screen to ensure immediate redirect
+      // This bypasses potential delays in the auth state listener
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the loading dialog
+        // Use pushNamedAndRemoveUntil to clear the navigation stack
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      // Log the error for debugging
+      print('Sign out error: $e');
+
+      // Close the loading dialog if still open
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // Show error snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la déconnexion: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -73,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isSmallScreen = MediaQuery.of(context).size.width < 600;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: isSmallScreen
@@ -340,7 +359,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           : null,
-      floatingActionButton: null,
     );
   }
 }

@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 // import 'package:shared_preferences/shared_preferences.dart'; // You'll need to add this to your pubspec.yaml
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -408,13 +408,13 @@ class AppointmentCard extends StatelessWidget {
   final bool isTablet; // Add isTablet parameter
 
   const AppointmentCard({
-    Key? key,
+    super.key,
     required this.appointment,
     required this.patientName,
     required this.statusTranslations,
     this.isImportant = false,
     required this.isTablet, // Require isTablet
-  }) : super(key: key);
+  });
 
   String _getTranslatedStatus(String status) {
     return statusTranslations[status] ?? status;

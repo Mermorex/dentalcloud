@@ -1,336 +1,265 @@
 // lib/screens/auth_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:universal_html/html.dart' as html;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home_screen.dart';
+import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
+
+final supabase = Supabase.instance.client;
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  const AuthScreen({super.key});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLogin = true;
   bool _isLoading = false;
-  String? _errorMessage;
-  String? _serverIp; // To store the server IP
-
-  static const String SERVER_PORT = '8000';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadServerIp();
-  }
-
-  void _loadServerIp() {
-    if (html.window.location.protocol.startsWith('http')) {
-      try {
-        final uri = Uri.parse(html.window.location.href);
-        final ip = uri.queryParameters['serverIp'];
-        setState(() {
-          _serverIp = ip;
-          print('[AuthScreen] Server IP from URL: $_serverIp');
-        });
-      } catch (e) {
-        print('[AuthScreen] Error parsing URL or extracting serverIp: $e');
-        setState(() {
-          _serverIp = null;
-        });
-      }
-    } else {
-      print(
-        '[AuthScreen] Not running in a web environment or protocol is not http/https.',
-      );
-    }
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final AuthResponse res = await Supabase.instance.client.auth
-          .signInWithPassword(
-            email: _usernameController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-
-      if (res.user != null) {
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
-      } else {
-        setState(() {
-          _errorMessage = 'Login failed. Please check your credentials.';
-        });
-      }
-    } on AuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
+  bool _isPasswordVisible = false;
+  String? _errorMsg;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
     super.dispose();
+  }
+
+  void _showError(String message) {
+    setState(() => _errorMsg = message);
+  }
+
+  void _clear() {
+    _emailCtrl.clear();
+    _passCtrl.clear();
+    setState(() => _errorMsg = null);
+  }
+
+  Future<void> _signUp() async {
+    setState(() => _isLoading = true);
+    _errorMsg = null;
+
+    try {
+      await supabase.auth.signUp(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text.trim(),
+        emailRedirectTo:
+            'https://dentalapp.smarthub.tn/set-password', // ✅ No trailing space
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vérifiez votre email pour confirmer le compte.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      _clear();
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Erreur inattendue');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    _errorMsg = null;
+
+    try {
+      // Perform sign-in
+      final response = await supabase.auth.signInWithPassword(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text.trim(),
+      );
+
+      // ✅ Explicitly check session after login
+      final session = supabase.auth.currentSession;
+      final user = supabase.auth.currentUser;
+
+      if (session != null && user != null && mounted) {
+        // ✅ Force redirect to home
+        if (kIsWeb) {
+          html.window.history.pushState(null, 'Home', '/home');
+        }
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        // This should not happen — but just in case
+        _showError('Échec de la connexion. Veuillez réessayer.');
+      }
+    } on AuthException catch (e) {
+      _showError(
+        e.message.contains('Email not confirmed')
+            ? 'Veuillez confirmer votre email avant de vous connecter.'
+            : e.message,
+      );
+    } catch (e) {
+      _showError('Erreur inattendue');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      _showError('Veuillez entrer votre email');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    _errorMsg = null;
+
+    try {
+      await supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo:
+            'https://dentalapp.smarthub.tn/set-password', // ✅ No trailing space
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Un lien de réinitialisation a été envoyé par email.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _clear();
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Erreur lors de l\'envoi de l\'email.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('[AuthScreen] Building widget. Current _serverIp: $_serverIp');
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.teal.shade50, Colors.blue.shade50],
-              ),
-            ),
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
+      backgroundColor: Colors.grey[100],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              children: [
+                Text(
+                  _isLogin ? 'Connexion' : 'Inscription',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal.shade800,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                if (_errorMsg != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      _errorMsg!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+
+                Form(
                   key: _formKey,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        'assets/images/tooth_logo.png',
-                        height: 120,
-                        width: 120,
-                        errorBuilder: (context, error, stackTrace) {
-                          print('[AuthScreen] Error loading image: $error');
-                          return const Icon(Icons.broken_image, size: 120);
-                        },
-                      ),
-                      const SizedBox(height: 32),
-                      Text(
-                        'Bienvenue',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal.shade800,
+                      TextFormField(
+                        controller: _emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
                         ),
+                        validator: (v) =>
+                            v?.isEmpty == true ? 'Email requis' : null,
                       ),
-                      Text(
-                        'Connectez-vous à votre compte',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                        width: 350.0,
-                        child: TextFormField(
-                          controller: _usernameController,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'Entrez votre email',
-                            prefixIcon: Icon(
-                              Icons.email,
-                              color: Colors.teal.shade600,
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passCtrl,
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          labelText: 'Mot de passe',
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16.0,
-                              horizontal: 20.0,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre email.';
-                            }
-                            if (!RegExp(
-                              r'^[^@]+@[^@]+\.[^@]+',
-                            ).hasMatch(value)) {
-                              return 'Veuillez entrer une adresse email valide.';
-                            }
-                            return null;
-                          },
-                          style: GoogleFonts.montserrat(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: 350.0,
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: 'Mot de passe',
-                            hintText: 'Entrez votre mot de passe',
-                            prefixIcon: Icon(
-                              Icons.lock,
-                              color: Colors.teal.shade600,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16.0,
-                              horizontal: 20.0,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre mot de passe.';
-                            }
-                            return null;
-                          },
-                          style: GoogleFonts.montserrat(),
-                        ),
-                      ),
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Text(
-                            _errorMessage!,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.red,
-                              fontSize: 14,
+                            onPressed: () => setState(
+                              () => _isPasswordVisible = !_isPasswordVisible,
                             ),
                           ),
                         ),
-                      const SizedBox(height: 32),
+                        validator: (v) =>
+                            v?.isEmpty == true ? 'Mot de passe requis' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isLogin)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _sendPasswordResetEmail,
+                            child: const Text('Mot de passe oublié ?'),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
                       _isLoading
-                          ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.teal,
-                              ),
-                            )
-                          : SizedBox(
-                              width: 350.0,
-                              child: ElevatedButton(
-                                onPressed: _submit, // Existing login method
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.teal,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 50,
-                                    vertical: 15,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  elevation: 5,
-                                ),
-                                child: Text(
-                                  'Se connecter',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  _isLogin ? _login() : _signUp();
+                                }
+                              },
+                              child: Text(
+                                _isLogin ? 'Se connecter' : 'S\'inscrire',
+                                style: GoogleFonts.montserrat(fontSize: 18),
                               ),
                             ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLogin = !_isLogin;
+                            _errorMsg = null;
+                            _clear();
+                          });
+                        },
+                        child: Text(
+                          _isLogin
+                              ? 'Pas encore de compte ? S\'inscrire'
+                              : 'Déjà un compte ? Se connecter',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.teal.shade800,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
           ),
-          if (_serverIp != null && _serverIp!.isNotEmpty)
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Scannez pour mobile:',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        color: Colors.grey.shade800,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 5),
-                    QrImageView(
-                      data: 'http://$_serverIp:$SERVER_PORT',
-                      version: QrVersions.auto,
-                      size: 100.0,
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.teal.shade800,
-                      errorStateBuilder: (cxt, err) {
-                        print('[AuthScreen] QrImageView Error: $err');
-                        return Center(
-                          child: Text(
-                            "Erreur QR",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.red,
-                              fontSize: 10,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'http://$_serverIp:$SERVER_PORT',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 9,
-                        color: Colors.grey.shade600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

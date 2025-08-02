@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/appointment.dart';
-import '../models/patient.dart'; // Import the Patient model
+// Import the Patient model
 import '../providers/patient_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 

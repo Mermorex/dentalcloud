@@ -1,0 +1,207 @@
+import 'dart:async';
+
+import 'package:dental/models/patient.dart';
+import 'package:dental/providers/patient_provider.dart';
+import 'package:dental/screens/add_patient_screen.dart';
+import 'package:dental/screens/auth_callback_screen.dart';
+import 'package:dental/screens/edit_patient_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:dental/screens/home_screen.dart';
+import 'package:dental/screens/auth_screen.dart';
+import 'package:dental/screens/set_password_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
+
+  await Supabase.initialize(
+    url: 'https://jymqyezkyzzvuvqephdh.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5bXF5ZXpreXp6dnV2cWVwaGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1NDkwNjcsImV4cCI6MjA2OTEyNTA2N30.CqnJ-yVjf5M_y6DzpZ5sRsBT_9HlFPPm8sn5vMThYPo',
+  );
+
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => PatientProvider())],
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Dental App',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        textTheme: GoogleFonts.montserratTextTheme(Theme.of(context).textTheme),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          hintStyle: GoogleFonts.montserrat(color: Colors.grey[400]),
+          labelStyle: GoogleFonts.montserrat(color: Colors.teal[800]),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
+            textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.teal,
+            textStyle: GoogleFonts.montserrat(),
+          ),
+        ),
+      ),
+      home: const AuthStateWrapper(), // Simplified - use home instead of routes
+      onGenerateRoute: (settings) {
+        if (settings.name == '/home') {
+          return MaterialPageRoute(builder: (_) => const HomeScreen());
+        } else if (settings.name == '/add-patient') {
+          return MaterialPageRoute(builder: (_) => const AddPatientScreen());
+        } else if (settings.name == '/login') {
+          return MaterialPageRoute(builder: (_) => const AuthScreen());
+        } else if (settings.name == '/set-password') {
+          return MaterialPageRoute(builder: (_) => const SetPasswordScreen());
+        } else if (settings.name == '/auth/callback') {
+          return MaterialPageRoute(builder: (_) => const AuthCallbackScreen());
+        } else if (settings.name == '/edit-patient') {
+          final patient = settings.arguments as Patient;
+          return MaterialPageRoute(
+            builder: (_) => EditPatientScreen(patient: patient),
+          );
+        }
+        return null;
+      },
+    );
+  }
+}
+
+class AuthStateWrapper extends StatefulWidget {
+  const AuthStateWrapper({super.key});
+
+  @override
+  State<AuthStateWrapper> createState() => _AuthStateWrapperState();
+}
+
+class _AuthStateWrapperState extends State<AuthStateWrapper> {
+  late final StreamSubscription<AuthState> _authSub;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Small delay to ensure app is fully initialized
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _initializeAuth();
+    });
+  }
+
+  void _initializeAuth() {
+    // Check initial session and URL parameters
+    _checkInitialAuthState();
+
+    // Listen for auth state changes
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      final event = data.event;
+      print('Auth Event: $event');
+
+      if (event == AuthChangeEvent.passwordRecovery) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const SetPasswordScreen()),
+        );
+      } else if (event == AuthChangeEvent.signedIn) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else if (event == AuthChangeEvent.signedOut) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+        );
+      }
+    });
+  }
+
+  void _checkInitialAuthState() {
+    final session = Supabase.instance.client.auth.currentSession;
+    final uri = Uri.base;
+    final queryParameters = uri.queryParameters;
+
+    print(
+      'Initial check - Session: ${session?.user?.email}, Params: $queryParameters',
+    );
+
+    // Check for recovery flow
+    if (queryParameters['type'] == 'recovery') {
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const SetPasswordScreen()),
+      );
+      return;
+    }
+
+    // Regular auth flow
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (session != null) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+    }
+    // If no session, stay on AuthScreen (which is the default)
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Final check before rendering
+    final session = Supabase.instance.client.auth.currentSession;
+    final uri = Uri.base;
+    final queryParameters = uri.queryParameters;
+
+    if (queryParameters['type'] == 'recovery') {
+      return const SetPasswordScreen();
+    }
+
+    return session != null ? const HomeScreen() : const AuthScreen();
+  }
+}

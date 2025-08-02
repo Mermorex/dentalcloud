@@ -14,7 +14,7 @@ final GlobalKey<_AppointmentsListScreenState> appointmentsListScreenKey =
     GlobalKey(); //
 
 class AppointmentsListScreen extends StatefulWidget {
-  const AppointmentsListScreen({Key? key}) : super(key: key); //
+  const AppointmentsListScreen({super.key}); //
 
   @override
   State<AppointmentsListScreen> createState() => _AppointmentsListScreenState();
@@ -221,11 +221,9 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
                     transitionDuration: Duration.zero,
                   ),
                 );
+                // Call _loadAppointments to refresh the list after returning from AddAppointmentScreen
                 if (mounted) {
-                  Provider.of<PatientProvider>(
-                    context,
-                    listen: false,
-                  ).loadAppointments();
+                  await _loadAppointments();
                 }
               },
             ),
@@ -508,11 +506,9 @@ class _AppointmentsListScreenState extends State<AppointmentsListScreen> {
                       transitionDuration: Duration.zero,
                     ),
                   );
+                  // Call _loadAppointments to refresh the list after returning from AddAppointmentScreen
                   if (mounted) {
-                    Provider.of<PatientProvider>(
-                      context,
-                      listen: false,
-                    ).loadAppointments();
+                    await _loadAppointments();
                   }
                 },
               ),
@@ -552,13 +548,13 @@ class AppointmentCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   const AppointmentCard({
-    Key? key,
+    super.key,
     required this.appointment,
     required this.patientName,
     required this.statusTranslations,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   String _getTranslatedStatus(String status) {
     return statusTranslations[status] ?? status;
@@ -675,7 +671,7 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${appointment.date}',
+                    appointment.date,
                     style: GoogleFonts.montserrat(
                       fontSize: isTablet ? 16 : 14,
                       color: Colors.grey.shade700,
@@ -690,7 +686,7 @@ class AppointmentCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${appointment.time}',
+                    appointment.time,
                     style: GoogleFonts.montserrat(
                       fontSize: isTablet ? 16 : 14,
                       color: Colors.grey.shade700,

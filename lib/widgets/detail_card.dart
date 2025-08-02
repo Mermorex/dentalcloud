@@ -8,11 +8,11 @@ class DetailCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding; // Optional padding
 
   const DetailCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.children,
     this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

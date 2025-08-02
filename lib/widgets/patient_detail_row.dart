@@ -8,45 +8,76 @@ class PatientDetailRow extends StatelessWidget {
   final bool isMultiLine;
 
   const PatientDetailRow({
-    Key? key,
+    super.key,
     required this.label,
     this.value,
     this.isMultiLine = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     if (value == null || value!.isEmpty) {
-      return const SizedBox.shrink();
+      return const SizedBox.shrink(); // Hides the row if the value is null or empty
     }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label: ',
-            style: GoogleFonts.montserrat(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
+      child: isMultiLine
+          ? Column(
+              // Use Column for multi-line display
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$label: ',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.teal.shade800, // Changed color for emphasis
+                  ),
+                ),
+                const SizedBox(
+                  height: 4.0,
+                ), // Spacing between label and multiline value
+                Text(
+                  value!,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    color: Colors.grey[800],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  softWrap: true,
+                  // No maxLines or overflow needed here, as it's a multiline text field
+                ),
+              ],
+            )
+          : Row(
+              // Keep Row for single-line display
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$label: ',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    value!,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      color: Colors.grey[800],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    softWrap: true,
+                    maxLines: 1, // Restrict to single line
+                    overflow:
+                        TextOverflow.ellipsis, // Use ellipsis for overflow
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            child: Text(
-              value!,
-              style: GoogleFonts.montserrat(
-                fontSize: 16,
-                color: Colors.grey[800],
-                fontWeight: FontWeight.w500,
-              ),
-              softWrap: true,
-              maxLines: isMultiLine ? null : 1,
-              overflow: isMultiLine ? TextOverflow.clip : TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

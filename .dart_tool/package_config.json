@@ -375,9 +375,9 @@
     },
     {
       "name": "js",
-      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.7.2",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.6.7",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "2.19"
     },
     {
       "name": "json_annotation",
@@ -846,6 +846,24 @@
       "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "uni_links",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links-0.5.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "uni_links_platform_interface",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links_platform_interface-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "uni_links_web",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links_web-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "universal_html",

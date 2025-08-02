@@ -1022,14 +1022,6 @@ file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.2/lib/src/qr_
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.2/lib/src/qr_image.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.2/lib/src/rs_block.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr-3.0.2/lib/src/util.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/qr_flutter.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/errors.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/paint_cache.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/qr_image_view.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/qr_painter.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/qr_versions.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/types.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/qr_flutter-4.1.0/lib/src/validator.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.5.1/lib/realtime_client.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.5.1/lib/src/constants.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.5.1/lib/src/message.dart
@@ -1232,9 +1224,6 @@ file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/src/typed_queue.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/typed_buffers.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/typed_data.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/universal_html-2.2.4/lib/html.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/universal_html-2.2.4/lib/src/_sdk/html.dart
-file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/universal_html-2.2.4/lib/src/_sdk_html_additions.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/legacy_api.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/type_conversion.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/types.dart
@@ -1627,7 +1616,7 @@ file:///D:/detiste%20app/dental%20Cloud/lib/screens/edit_visit_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/home_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/patient_detail_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/patients_list.dart
-file:///D:/detiste%20app/dental%20Cloud/lib/screens/signup_screen.dart
+file:///D:/detiste%20app/dental%20Cloud/lib/screens/set_password_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/utils/pdf_helper.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/utils/pdf_helper_web.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/widgets/detail_card.dart

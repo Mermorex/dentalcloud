@@ -8,7 +8,7 @@ import 'patient_detail_screen.dart';
 import 'add_patient_screen.dart'; // Import the AddPatientScreen
 
 class PatientsList extends StatefulWidget {
-  const PatientsList({Key? key}) : super(key: key);
+  const PatientsList({super.key});
 
   @override
   State<PatientsList> createState() => _PatientsListState();

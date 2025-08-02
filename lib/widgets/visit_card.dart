@@ -13,11 +13,11 @@ class VisitCard extends StatefulWidget {
   final VoidCallback onVisitUpdated;
 
   const VisitCard({
-    Key? key,
+    super.key,
     required this.visit,
     required this.patientId,
     required this.onVisitUpdated,
-  }) : super(key: key);
+  });
 
   @override
   State<VisitCard> createState() => _VisitCardState();
@@ -273,11 +273,10 @@ class _VisitCardState extends State<VisitCard> {
                               label: 'Traitement',
                               value: widget.visit.treatment,
                             ),
-                            if (widget.visit.notes != null &&
-                                widget.visit.notes!.isNotEmpty)
+                            if (widget.visit.notes.isNotEmpty)
                               VisitDetailRow(
                                 label: 'Notes',
-                                value: widget.visit.notes!,
+                                value: widget.visit.notes,
                               ),
 
                             // Next Visit Section

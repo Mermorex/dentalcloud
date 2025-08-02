@@ -1,5 +1,4 @@
 // lib/utils/pdf_helper_web.dart
-import 'dart:js' as js;
 import 'dart:html' as html; // <--- This is the missing import for 'document'
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';

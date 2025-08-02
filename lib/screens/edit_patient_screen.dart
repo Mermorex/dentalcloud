@@ -8,7 +8,7 @@ import '../widgets/main_button.dart'; // Import the MainButton widget
 
 class EditPatientScreen extends StatefulWidget {
   final Patient patient;
-  const EditPatientScreen({Key? key, required this.patient}) : super(key: key);
+  const EditPatientScreen({super.key, required this.patient});
 
   @override
   State<EditPatientScreen> createState() => _EditPatientScreenState();
@@ -96,7 +96,8 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
     }
   }
 
-  void _save() {
+  void _save() async {
+    // Made _save async
     if (_formKey.currentState!.validate()) {
       final updatedPatient = Patient(
         id: widget.patient.id, // Keep the existing ID
@@ -125,20 +126,38 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
         lastXRay: _lastXRayCtrl.text,
       );
 
-      Provider.of<PatientProvider>(
-        context,
-        listen: false,
-      ).updatePatient(updatedPatient);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Patient modifié avec succès !',
-            style: GoogleFonts.montserrat(),
+      try {
+        await Provider.of<PatientProvider>(
+          context,
+          listen: false,
+        ).updatePatient(updatedPatient);
+        if (!mounted) {
+          return; // Check mounted before showing SnackBar or popping
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Patient modifié avec succès !',
+              style: GoogleFonts.montserrat(),
+            ),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(context).pop(); // Go back after saving
+        );
+        Navigator.of(
+          context,
+        ).pop(updatedPatient); // Go back and pass the updated patient
+      } catch (e) {
+        if (!mounted) return; // Check mounted if an error occurs
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erreur lors de la modification du patient: $e',
+              style: GoogleFonts.montserrat(),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

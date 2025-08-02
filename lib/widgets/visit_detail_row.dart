@@ -8,12 +8,12 @@ class VisitDetailRow extends StatelessWidget {
   final FontWeight? valueFontWeight;
 
   const VisitDetailRow({
-    Key? key,
+    super.key,
     required this.label,
     this.value, // Now optional
     this.valueColor,
     this.valueFontWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

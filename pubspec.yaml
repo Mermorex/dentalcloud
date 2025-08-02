@@ -51,6 +51,8 @@ dependencies:
   network_info_plus: ^6.1.4
   universal_html: ^2.2.4
   flutter_animate: ^4.0.0
+  js: ^0.6.7
+  uni_links: ^0.5.1
 
   
   
@@ -62,6 +64,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
 
+  intl: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
