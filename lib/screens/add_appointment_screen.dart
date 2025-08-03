@@ -12,7 +12,6 @@ import '../widgets/main_button.dart'; // Import the MainButton widget
 class AddAppointmentScreen extends StatefulWidget {
   final DateTime?
   initialDate; // Optional initial date passed from previous screen
-
   const AddAppointmentScreen({
     super.key,
     this.initialDate,
@@ -28,18 +27,15 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   final _dateCtrl = TextEditingController();
   final _timeCtrl = TextEditingController();
   final _patientCtrl = TextEditingController(); // Controller for patient name
-
   String? _selectedPatientId; // Changed from int? to String?
   String? _selectedPatientName; // Store selected patient's name
   String _selectedStatus = 'Scheduled';
-
   final List<String> _statusOptions = [
     'Scheduled',
-    'Reported',
+    'Reported', // Note: This seems to be the intended translation for 'Completed' based on your list screen. Keeping as is.
     'Cancelled',
     'No Show',
   ];
-
   final Map<String, String> _statusTranslations = {
     'Scheduled': 'Programmé',
     'Reported': 'Reporté',
@@ -50,19 +46,34 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   @override
   void initState() {
     super.initState();
+    print('AddAppointmentScreen: initState called.');
+    print(
+      'AddAppointmentScreen: widget.initialDate received: ${widget.initialDate}',
+    );
+    print(
+      'AddAppointmentScreen: widget.initialDate type: ${widget.initialDate?.runtimeType}',
+    );
+
     // Initialize date controller here, as it doesn't depend on context
     if (widget.initialDate != null) {
       // <-- If an initial date was passed, use it
-      _dateCtrl.text = DateFormat('yyyy-MM-dd').format(widget.initialDate!);
-      print(
-        'AddAppointmentScreen: Received initial date: ${widget.initialDate}',
-      ); // DEBUG PRINT
+      try {
+        _dateCtrl.text = DateFormat('yyyy-MM-dd').format(widget.initialDate!);
+        print(
+          'AddAppointmentScreen: Successfully formatted initial date to: ${_dateCtrl.text}',
+        );
+      } catch (e) {
+        print(
+          'AddAppointmentScreen: Error formatting initial date: $e. Defaulting to today.',
+        );
+        _dateCtrl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      }
     } else {
       // <-- Otherwise, default to today's date
       _dateCtrl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
       print(
-        'AddAppointmentScreen: No initial date received, defaulting to today: ${DateTime.now()}',
-      ); // DEBUG PRINT
+        'AddAppointmentScreen: No initial date received, defaulting to today: ${_dateCtrl.text}', // Log the formatted date string
+      );
     }
     // _timeCtrl.text = TimeOfDay.now().format(context); // MOVED THIS LINE
   }
@@ -161,7 +172,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   void _saveAppointment() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
       if (_selectedPatientId == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -176,7 +186,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         }
         return;
       }
-
       final newAppointment = Appointment(
         patientId: _selectedPatientId!,
         date: _dateCtrl.text,
@@ -184,12 +193,10 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         notes: _notesCtrl.text,
         status: _selectedStatus,
       );
-
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
       );
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -202,9 +209,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           ),
         );
       }
-
       await patientProvider.addAppointment(newAppointment);
-
       // Check if the widget is still mounted before using context
       if (mounted) {
         // Await the completion of the SnackBar before popping the screen
@@ -220,7 +225,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
               ),
             )
             .closed; // This ensures the Future returns when the SnackBar is dismissed.
-
         // Now it's safe to pop the screen as the SnackBar operation has completed.
         if (mounted) {
           // Re-check mounted status as it's an async gap
@@ -245,7 +249,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
         );
       },
     );
-
     if (selectedPatient != null) {
       setState(() {
         _selectedPatientId = selectedPatient.id;
@@ -392,7 +395,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50, // Consistent background color
       appBar: AppBar(

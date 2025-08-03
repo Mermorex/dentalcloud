@@ -27,7 +27,7 @@ class Patient {
   final String? lastDentalVisit;
   final String? lastXRay;
   final int? visitCount;
-  final String? clientId; // Ensure this is nullable (String?)
+  final String? cabinetCode; // CHANGED: clientId -> cabinetCode
 
   Patient({
     String? id,
@@ -55,7 +55,7 @@ class Patient {
     this.lastDentalVisit,
     this.lastXRay,
     this.visitCount,
-    this.clientId, // Ensure this is a normal optional parameter (no 'required')
+    this.cabinetCode, // CHANGED: clientId -> cabinetCode
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -85,7 +85,7 @@ class Patient {
       'last_dental_visit': lastDentalVisit,
       'last_xray': lastXRay,
       'visit_count': visitCount,
-      'client_id': clientId, // Included in toMap for the database column
+      'cabinet_code': cabinetCode, // CHANGED: client_id -> cabinet_code
     };
   }
 
@@ -117,7 +117,8 @@ class Patient {
       lastDentalVisit: map['last_dental_visit'] as String?,
       lastXRay: map['last_xray'] as String?,
       visitCount: map['visit_count'] as int?,
-      clientId: map['client_id'] as String?, // Reads from the database column
+      cabinetCode:
+          map['cabinet_code'] as String?, // CHANGED: client_id -> cabinet_code
     );
   }
 
@@ -147,7 +148,7 @@ class Patient {
     String? lastDentalVisit,
     String? lastXRay,
     int? visitCount,
-    String? clientId, // Ensure this is nullable here too
+    String? cabinetCode, // CHANGED: clientId -> cabinetCode
   }) {
     return Patient(
       id: id ?? this.id,
@@ -179,8 +180,8 @@ class Patient {
       lastDentalVisit: lastDentalVisit ?? this.lastDentalVisit,
       lastXRay: lastXRay ?? this.lastXRay,
       visitCount: visitCount ?? this.visitCount,
-      clientId:
-          clientId ?? this.clientId, // Ensure proper handling of nullability
+      cabinetCode:
+          cabinetCode ?? this.cabinetCode, // CHANGED: clientId -> cabinetCode
     );
   }
 }

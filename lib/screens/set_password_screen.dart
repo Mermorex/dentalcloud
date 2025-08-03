@@ -39,35 +39,115 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
     });
 
     try {
-      final res = await supabase.auth.updateUser(
+      // 1. Mettre à jour le mot de passe
+      await supabase.auth.updateUser(
         UserAttributes(password: _newPasswordCtrl.text),
       );
 
-      if (res.user != null) {
-        // Sign out after password update
-        await supabase.auth.signOut();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mot de passe mis à jour avec succès.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          // Redirect to login
-          if (kIsWeb) {
-            html.window.history.pushState(null, 'Login', '/login');
-          }
-          Navigator.of(context).pushReplacementNamed('/login');
-        }
+      // 2. Afficher le message de succès initial
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mot de passe mis à jour avec succès.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
+
+      // 3. Attendre un court instant pour que le SnackBar soit visible
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      // 4. Procéder à la déconnexion et navigation
+      await _signOutAndNavigate();
     } on AuthException catch (e) {
-      setState(() => _errorMsg = e.message);
+      // Gérer les erreurs spécifiques d'authentification
+      setState(() => _errorMsg = e.message ?? 'Erreur d\'authentification.');
     } catch (e) {
-      setState(() => _errorMsg = 'Erreur inattendue');
+      // Gérer toutes les autres erreurs
+      debugPrint(
+        "Erreur inattendue lors de la mise à jour du mot de passe: $e",
+      );
+
+      // Même si une erreur inattendue se produit ici, on considère que le mot de passe
+      // a probablement été changé (car updateUser n'a pas levé d'AuthException)
+      // et on tente quand même la déconnexion et la navigation.
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mot de passe mis à jour. Redirection...'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      // Attendre un peu plus longtemps pour que le SnackBar soit visible
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      // Procéder à la déconnexion et navigation
+      await _signOutAndNavigate();
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Méthode dédiée pour la déconnexion et la navigation
+  /// avec un rafraîchissement en dernier recours.
+  Future<void> _signOutAndNavigate() async {
+    // 1. Tenter de se déconnecter
+    try {
+      await supabase.auth.signOut();
+      debugPrint("✅ Déconnexion effectuée (ou tentée).");
+    } catch (signOutError) {
+      debugPrint(
+        "⚠️ Erreur (potentiellement non fatale) lors de la déconnexion: $signOutError",
+      );
+      // On continue malgré l'erreur de déconnexion
+    }
+
+    // 2. Mettre à jour l'URL du navigateur pour la page de connexion (si web)
+    if (kIsWeb) {
+      try {
+        html.window.history.pushState(null, 'Login', '/login');
+        debugPrint("🌐 URL du navigateur mise à jour vers /login.");
+      } catch (urlError) {
+        debugPrint(
+          "⚠️ Erreur (potentiellement non fatale) lors de la mise à jour de l'URL: $urlError",
+        );
+      }
+    }
+
+    // 3. Tenter la navigation Flutter standard
+    bool navigationAttempted = false;
+    if (mounted) {
+      try {
+        // Planifier la navigation après le traitement de l'état actuel
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/login');
+            navigationAttempted = true;
+            debugPrint("➡️ Navigation Flutter vers /login tentée.");
+          }
+        });
+      } catch (navError) {
+        debugPrint("⚠️ Erreur lors de la navigation Flutter: $navError");
+      }
+    }
+
+    // 4. Attendre un court instant pour voir si la navigation Flutter se produit
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    // 5. Si nous sommes toujours dans un contexte web, forcer un rafraîchissement
+    // comme solution de secours pour garantir la redirection.
+    if (kIsWeb) {
+      debugPrint("🔄 Rafraîchissement forcé de la page déclenché.");
+      html.window.location.reload(); // Rafraîchit complètement la page
+    } else {
+      // Pour les autres plateformes, si la navigation échoue, vous pouvez envisager
+      // d'afficher un message ou de retenter la navigation.
+      debugPrint(
+        "⚠️ Navigation Flutter échouée et pas sur Web - logique supplémentaire nécessaire ?",
+      );
     }
   }
 

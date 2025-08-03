@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/patient.dart';
 import '../models/visit.dart';
 import '../models/appointment.dart';
-// For generating UUIDs for local inserts
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -46,14 +45,17 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deletePatient(String id, String clientId) async {
-    // Added clientId
+  Future<int> deletePatient(String id, String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       await _supabase
           .from('patients')
           .delete()
           .eq('id', id)
-          .eq('client_id', clientId);
+          .eq(
+            'cabinet_code',
+            cabinetCode,
+          ); // CHANGED: client_id -> cabinet_code
       return 1;
     } catch (e) {
       print('Error deleting patient: $e');
@@ -61,18 +63,21 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Patient>> getPatientsWithVisitCount(String clientId) async {
-    // Added clientId
+  Future<List<Patient>> getPatientsWithVisitCount(String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       final patientData = await _supabase
           .from('patients')
           .select('*')
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .order('name', ascending: true);
       final visitData = await _supabase
           .from('visits')
           .select('patient_id')
-          .eq('client_id', clientId); // Filter by client_id
+          .eq(
+            'cabinet_code',
+            cabinetCode,
+          ); // CHANGED: client_id -> cabinet_code
 
       final Map<String, int> visitCounts = {};
       for (var visit in visitData) {
@@ -90,13 +95,13 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Patient>> getAllPatients(String clientId) async {
-    // Added clientId
+  Future<List<Patient>> getAllPatients(String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       final response = await _supabase
           .from('patients')
           .select('*')
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .order('name', ascending: true);
       return response.map((e) => Patient.fromMap(e)).toList();
     } catch (e) {
@@ -105,14 +110,14 @@ class DatabaseHelper {
     }
   }
 
-  Future<Patient?> getPatientById(String id, String clientId) async {
-    // Added clientId
+  Future<Patient?> getPatientById(String id, String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       final response = await _supabase
           .from('patients')
           .select('*')
           .eq('id', id)
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .single();
       if (response.isNotEmpty) {
         return Patient.fromMap(response);
@@ -120,7 +125,7 @@ class DatabaseHelper {
       return null;
     } catch (e) {
       print('Error getting patient by ID: $e');
-      return null; // Return null if not found or error
+      return null;
     }
   }
 
@@ -159,14 +164,17 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deleteVisit(String id, String clientId) async {
-    // Added clientId
+  Future<int> deleteVisit(String id, String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       await _supabase
           .from('visits')
           .delete()
           .eq('id', id)
-          .eq('client_id', clientId);
+          .eq(
+            'cabinet_code',
+            cabinetCode,
+          ); // CHANGED: client_id -> cabinet_code
       return 1;
     } catch (e) {
       print('Error deleting visit: $e');
@@ -176,15 +184,15 @@ class DatabaseHelper {
 
   Future<List<Visit>> getVisitsForPatient(
     String patientId,
-    String clientId,
+    String cabinetCode,
   ) async {
-    // Added clientId
+    // CHANGED: clientId -> cabinetCode
     try {
       final response = await _supabase
           .from('visits')
           .select('*')
           .eq('patient_id', patientId)
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .order('date', ascending: false)
           .order('time', ascending: false);
       return response.map((e) => Visit.fromMap(e)).toList();
@@ -212,13 +220,13 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Appointment>> getAllAppointments(String clientId) async {
-    // Added clientId
+  Future<List<Appointment>> getAllAppointments(String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       final response = await _supabase
           .from('appointments')
           .select('*, patients!inner(name)')
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .order('date', ascending: true)
           .order('time', ascending: true);
 
@@ -239,15 +247,15 @@ class DatabaseHelper {
 
   Future<List<Appointment>> getAppointmentsForPatient(
     String patientId,
-    String clientId,
+    String cabinetCode,
   ) async {
-    // Added clientId
+    // CHANGED: clientId -> cabinetCode
     try {
       final response = await _supabase
           .from('appointments')
           .select('*, patients!inner(name)')
           .eq('patient_id', patientId)
-          .eq('client_id', clientId) // Filter by client_id
+          .eq('cabinet_code', cabinetCode) // CHANGED: client_id -> cabinet_code
           .order('date', ascending: true)
           .order('time', ascending: true);
 
@@ -263,6 +271,21 @@ class DatabaseHelper {
     } catch (e) {
       print('Error getting appointments for patient: $e');
       rethrow;
+    }
+  }
+
+  Future<String?> getCabinetName(String cabinetCode) async {
+    try {
+      final response = await _supabase
+          .from('signup_codes')
+          .select('cabinet_name')
+          .eq('code', cabinetCode)
+          .single();
+
+      return response['cabinet_name'] as String?;
+    } catch (e) {
+      print('Error getting cabinet name: $e');
+      return null;
     }
   }
 
@@ -283,14 +306,17 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> deleteAppointment(String id, String clientId) async {
-    // Added clientId
+  Future<int> deleteAppointment(String id, String cabinetCode) async {
+    // CHANGED: clientId -> cabinetCode
     try {
       await _supabase
           .from('appointments')
           .delete()
           .eq('id', id)
-          .eq('client_id', clientId);
+          .eq(
+            'cabinet_code',
+            cabinetCode,
+          ); // CHANGED: client_id -> cabinet_code
       return 1;
     } catch (e) {
       print('Error deleting appointment: $e');

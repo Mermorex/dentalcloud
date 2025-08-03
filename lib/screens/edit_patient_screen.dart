@@ -19,7 +19,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _ageCtrl;
   late TextEditingController _phoneCtrl;
-
   late TextEditingController _dobCtrl;
   late TextEditingController _emailCtrl;
   late TextEditingController _addressCtrl;
@@ -39,7 +38,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
   late TextEditingController _oralHygieneHabitsCtrl;
   late TextEditingController _lastDentalVisitCtrl;
   late TextEditingController _lastXRayCtrl;
-
   late String _selectedGender; // Default gender
 
   @override
@@ -86,7 +84,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
     );
     _lastDentalVisitCtrl = TextEditingController(text: patient.lastDentalVisit);
     _lastXRayCtrl = TextEditingController(text: patient.lastXRay);
-
     // Set _selectedGender, ensuring it's one of 'Male' or 'Female'
     if (patient.gender == 'Other') {
       _selectedGender =
@@ -125,7 +122,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
         lastDentalVisit: _lastDentalVisitCtrl.text,
         lastXRay: _lastXRayCtrl.text,
       );
-
       try {
         await Provider.of<PatientProvider>(
           context,
@@ -315,7 +311,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
       initialDate = DateTime.tryParse(controller.text);
     }
     initialDate ??= DateTime.now();
-
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -356,7 +351,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -407,29 +401,49 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                         children: [
                           _buildTextField(
                             controller: _nameCtrl,
-                            labelText: 'Nom',
+                            labelText: 'Nom *', // Updated label
                             prefixIcon: const Icon(Icons.person),
                             validator: (value) {
+                              // Added validator
                               if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer un nom';
+                                return 'Le nom est requis'; // Updated message
+                              }
+                              return null;
+                            },
+                          ),
+                          _buildTextField(
+                            controller: _phoneCtrl,
+                            labelText: 'Téléphone *', // Updated label
+                            keyboardType: TextInputType.phone,
+                            prefixIcon: const Icon(Icons.phone),
+                            validator: (value) {
+                              // Added validator
+                              if (value == null || value.isEmpty) {
+                                return 'Le téléphone est requis'; // Updated message
+                              }
+                              return null;
+                            },
+                          ),
+                          _buildTextField(
+                            controller: _dobCtrl,
+                            labelText: 'Date de naissance *', // Updated label
+                            readOnly: true,
+                            onTap: () => _selectDate(_dobCtrl),
+                            prefixIcon: const Icon(Icons.calendar_today),
+                            validator: (value) {
+                              // Added validator
+                              if (value == null || value.isEmpty) {
+                                return 'La date de naissance est requise'; // Updated message
                               }
                               return null;
                             },
                           ),
                           _buildTextField(
                             controller: _ageCtrl,
-                            labelText: 'Âge',
+                            labelText: 'Âge (optionnel)', // Updated label
                             keyboardType: TextInputType.number,
                             prefixIcon: const Icon(Icons.cake),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez entrer un âge';
-                              }
-                              if (int.tryParse(value) == null) {
-                                return 'Veuillez entrer un nombre valide';
-                              }
-                              return null;
-                            },
+                            // Removed validator for age as it's optional
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -440,7 +454,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                                 color: Colors.black87,
                               ),
                               decoration: InputDecoration(
-                                labelText: 'Sexe',
+                                labelText: 'Sexe (optionnel)', // Updated label
                                 labelStyle: GoogleFonts.montserrat(
                                   fontSize: 18,
                                 ),
@@ -507,26 +521,17 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                                   _selectedGender = newValue!;
                                 });
                               },
+                              // No validator — gender is optional
                             ),
                           ),
-                          _buildTextField(
-                            controller: _phoneCtrl,
-                            labelText: 'Téléphone',
-                            keyboardType: TextInputType.phone,
-                            prefixIcon: const Icon(Icons.phone),
-                          ),
+                          // Removed other fields from this section to match AddPatientScreen order
                         ],
                       ),
+                      // Moved other fields to Démographie section to match AddPatientScreen
                       _buildSection(
                         title: 'Démographie (Facultatif)',
                         children: [
-                          _buildTextField(
-                            controller: _dobCtrl,
-                            labelText: 'Date de naissance (AAAA-MM-JJ)',
-                            readOnly: true,
-                            onTap: () => _selectDate(_dobCtrl),
-                            prefixIcon: const Icon(Icons.calendar_today),
-                          ),
+                          // Added fields that were previously in Informations de base
                           _buildTextField(
                             controller: _emailCtrl,
                             labelText: 'Email',
@@ -556,6 +561,16 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _primaryLanguageCtrl,
                             labelText: 'Langue principale',
                             prefixIcon: const Icon(Icons.language),
+                          ),
+                          // Existing Démographie fields
+                          _buildTextField(
+                            controller:
+                                _dobCtrl, // This is now duplicated from Informations de base, but the one in Informations de base is the primary one with validator
+                            labelText:
+                                'Date de naissance (AAAA-MM-JJ)', // Different label
+                            readOnly: true,
+                            onTap: () => _selectDate(_dobCtrl),
+                            prefixIcon: const Icon(Icons.calendar_today),
                           ),
                         ],
                       ),
@@ -672,14 +687,16 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                           ),
                           _buildTextField(
                             controller: _lastDentalVisitCtrl,
-                            labelText: 'Dernière visite dentaire (AAAA-MM-JJ)',
+                            labelText:
+                                'Dernière visite dentaire', // Removed date format hint to match AddPatientScreen
                             readOnly: true,
                             onTap: () => _selectDate(_lastDentalVisitCtrl),
                             prefixIcon: const Icon(Icons.event_available),
                           ),
                           _buildTextField(
                             controller: _lastXRayCtrl,
-                            labelText: 'Dernière radiographie (AAAA-MM-JJ)',
+                            labelText:
+                                'Dernière radiographie', // Removed date format hint to match AddPatientScreen
                             readOnly: true,
                             onTap: () => _selectDate(_lastXRayCtrl),
                             prefixIcon: const Icon(Icons.medical_services),

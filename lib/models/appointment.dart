@@ -9,7 +9,7 @@ class Appointment {
   final String notes;
   final String status;
   String? patientName;
-  final String? clientId; // Ensure this is present
+  final String? cabinetCode; // CHANGED: clientId -> cabinetCode
 
   Appointment({
     String? id,
@@ -19,7 +19,7 @@ class Appointment {
     required this.notes,
     this.status = 'Scheduled',
     this.patientName,
-    this.clientId, // Ensure this is present in the constructor
+    this.cabinetCode, // CHANGED: clientId -> cabinetCode
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -30,7 +30,7 @@ class Appointment {
       'time': time,
       'notes': notes,
       'status': status,
-      'client_id': clientId, // Ensure this is in toMap
+      'cabinet_code': cabinetCode, // CHANGED: client_id -> cabinet_code
     };
   }
 
@@ -44,12 +44,12 @@ class Appointment {
       status: map['status'] as String,
       patientName: map['patients'] != null && map['patients'] is Map
           ? (map['patients'] as Map)['name']
-          : null, // Correctly handle nested patient data for join
-      clientId: map['client_id'] as String?, // Ensure this is in fromMap
+          : null,
+      cabinetCode:
+          map['cabinet_code'] as String?, // CHANGED: client_id -> cabinet_code
     );
   }
 
-  // Add the copyWith method here
   Appointment copyWith({
     String? id,
     String? patientId,
@@ -58,7 +58,7 @@ class Appointment {
     String? notes,
     String? status,
     String? patientName,
-    String? clientId, // Add clientId here
+    String? cabinetCode, // CHANGED: clientId -> cabinetCode
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -68,7 +68,8 @@ class Appointment {
       notes: notes ?? this.notes,
       status: status ?? this.status,
       patientName: patientName ?? this.patientName,
-      clientId: clientId ?? this.clientId, // Set clientId here
+      cabinetCode:
+          cabinetCode ?? this.cabinetCode, // CHANGED: clientId -> cabinetCode
     );
   }
 }
