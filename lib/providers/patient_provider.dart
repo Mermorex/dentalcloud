@@ -11,50 +11,51 @@ class PatientProvider with ChangeNotifier {
   List<Patient> _filteredPatients = [];
   List<Appointment> _appointments = [];
   String _currentSearchQuery = '';
-  String?
-  _currentCabinetCode; // CHANGED: _currentClientId -> _currentCabinetCode
-  String? _currentCabinetName; // NEW: Store the cabinet name
+  // CHANGED: _currentCabinetCode -> _currentCabinetId
+  String? _currentCabinetId;
+  String? _currentCabinetName; // Store the cabinet name
   static const int MAX_PATIENT_LIMIT = 30;
 
   List<Patient> get patients => _patients;
   List<Patient> get filteredPatients => _filteredPatients;
   List<Appointment> get appointments => _appointments;
   String get currentSearchQuery => _currentSearchQuery;
-  String? get currentCabinetCode => _currentCabinetCode; // CHANGED: getter
-  String? get currentCabinetName => _currentCabinetName; // NEW: getter for name
+  // CHANGED: getter currentCabinetCode -> currentCabinetId
+  String? get currentCabinetId => _currentCabinetId;
+  String? get currentCabinetName => _currentCabinetName; // getter for name
 
-  // --- MODIFIED setCurrentCabinetCode ---
-  // NEW: Method to set current cabinet code and load associated info
-  // Ensures data is cleared when cabinet code is set to null.
-  Future<void> setCurrentCabinetCode(String? cabinetCode) async {
-    _currentCabinetCode = cabinetCode;
-    _currentCabinetName = null; // Reset name when code changes
-    if (cabinetCode != null) {
-      await _loadCabinetName(); // Load the cabinet name when code is set
+  // --- MODIFIED setCurrentCabinetId ---
+  // Method to set current cabinet ID and load associated info
+  // Ensures data is cleared when cabinet ID is set to null.
+  Future<void> setCurrentCabinetId(String? cabinetId) async {
+    // CHANGED: Parameter
+    _currentCabinetId = cabinetId; // CHANGED: Assignment
+    _currentCabinetName = null; // Reset name when ID changes
+    if (cabinetId != null) {
+      await _loadCabinetName(); // Load the cabinet name when ID is set
     } else {
-      // NEW: Clear data lists when cabinet code is removed (e.g., on logout or error)
-      print(
-        "PatientProvider: Clearing data lists because cabinet code is null.",
-      );
+      // Clear data lists when cabinet ID is removed (e.g., on logout or error)
+      print("PatientProvider: Clearing data lists because cabinet ID is null.");
       _patients = [];
       _filteredPatients = [];
       _appointments = [];
       _currentSearchQuery = '';
-      // _currentCabinetName is already null
     }
     notifyListeners();
     // Optionally reload data for the new cabinet
     // await loadPatients();
     // await loadAppointments();
   }
-  // --- END OF MODIFIED setCurrentCabinetCode ---
+  // --- END OF MODIFIED setCurrentCabinetId ---
 
-  // NEW: Helper method to load cabinet name from DB
+  // Helper method to load cabinet name from DB using cabinetId
   Future<void> _loadCabinetName() async {
-    if (_currentCabinetCode == null) return;
+    // CHANGED: Use _currentCabinetId
+    if (_currentCabinetId == null) return;
     try {
+      // CHANGED: Pass _currentCabinetId
       _currentCabinetName = await DatabaseHelper.instance.getCabinetName(
-        _currentCabinetCode!,
+        _currentCabinetId!,
       );
       notifyListeners();
     } catch (e) {
@@ -70,22 +71,23 @@ class PatientProvider with ChangeNotifier {
   }
 
   Future<void> loadPatients() async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot load patients.');
-      _patients = []; // Clear patients if cabinet code is missing
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot load patients.');
+      _patients = []; // Clear patients if cabinet ID is missing
       _filteredPatients = [];
       notifyListeners();
       return;
     }
     try {
+      // CHANGED: Pass cabinetId
       _patients = await DatabaseHelper.instance.getPatientsWithVisitCount(
-        cabinetCode, // CHANGED: clientId -> cabinetCode
+        cabinetId,
       );
       filterPatients(_currentSearchQuery);
     } catch (e) {
-      print('Failed to load patients: ${e.toString()}');
-      // Consider setting an error state if you re-introduce it
+      print('Failed to load patients: $e'); // Cleaner output
       _patients = [];
       _filteredPatients = [];
     }
@@ -93,9 +95,10 @@ class PatientProvider with ChangeNotifier {
   }
 
   Future<bool> addPatient(Patient p) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot add patient.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot add patient.');
       return false;
     }
     await loadPatients(); // Ensure latest count
@@ -104,208 +107,208 @@ class PatientProvider with ChangeNotifier {
       return false;
     }
     try {
-      // Create a new patient object with the cabinet code
-      final patientWithCabinetCode = p.copyWith(
-        cabinetCode: cabinetCode,
-      ); // CHANGED
-      await DatabaseHelper.instance.insertPatient(patientWithCabinetCode);
+      // Create a new patient object with the cabinet ID
+      // CHANGED: Use cabinetId in copyWith
+      final patientWithCabinetId = p.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
+      );
+      await DatabaseHelper.instance.insertPatient(patientWithCabinetId);
       await loadPatients();
       return true;
     } catch (e) {
-      print('Failed to add patient: ${e.toString()}');
+      print('Failed to add patient: $e');
       return false;
     }
   }
 
   Future<void> updatePatient(Patient p) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot update patient.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot update patient.');
       return;
     }
     try {
-      final patientWithCabinetCode = p.copyWith(
-        cabinetCode: cabinetCode,
-      ); // CHANGED
-      await DatabaseHelper.instance.updatePatient(patientWithCabinetCode);
+      // CHANGED: Use cabinetId in copyWith
+      final patientWithCabinetId = p.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
+      );
+      await DatabaseHelper.instance.updatePatient(patientWithCabinetId);
       await loadPatients();
     } catch (e) {
-      print('Failed to update patient: ${e.toString()}');
+      print('Failed to update patient: $e');
     }
   }
 
   Future<void> deletePatient(String patientId) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot delete patient.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot delete patient.');
       return;
     }
     try {
-      await DatabaseHelper.instance.deletePatient(
-        patientId,
-        cabinetCode,
-      ); // CHANGED
+      // CHANGED: Pass cabinetId
+      await DatabaseHelper.instance.deletePatient(patientId, cabinetId);
       await loadPatients();
     } catch (e) {
-      print('Failed to delete patient: ${e.toString()}');
+      print('Failed to delete patient: $e');
     }
   }
 
   // --- Visit related methods ---
   Future<List<Visit>> getVisitsForPatient(String patientId) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot get visits.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot get visits.');
       return [];
     }
     try {
+      // CHANGED: Pass cabinetId
       return await DatabaseHelper.instance.getVisitsForPatient(
         patientId,
-        cabinetCode, // CHANGED: clientId -> cabinetCode
+        cabinetId,
       );
     } catch (e) {
-      print('Failed to get visits: ${e.toString()}');
+      print('Failed to get visits: $e');
       return [];
     }
   }
 
   Future<void> addVisit(Visit visit) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot add visit.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot add visit.');
       return;
     }
     try {
-      final visitWithCabinetCode = visit.copyWith(
-        cabinetCode: cabinetCode,
-      ); // CHANGED
-      await DatabaseHelper.instance.insertVisit(visitWithCabinetCode);
-      await loadPatients(); // This reloads patients, implicitly updating visit counts.
+      // CHANGED: Use cabinetId in copyWith
+      final visitWithCabinetId = visit.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
+      );
+      await DatabaseHelper.instance.insertVisit(visitWithCabinetId);
+      await loadPatients(); // Reloads patients, updating visit counts.
       notifyListeners();
     } catch (e) {
-      print('Failed to add visit: ${e.toString()}');
+      print('Failed to add visit: $e');
     }
   }
 
   Future<void> updateVisit(Visit visit) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot update visit.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot update visit.');
       return;
     }
     try {
-      final visitWithCabinetCode = visit.copyWith(
-        cabinetCode: cabinetCode,
-      ); // CHANGED
-      await DatabaseHelper.instance.updateVisit(visitWithCabinetCode);
+      // CHANGED: Use cabinetId in copyWith
+      final visitWithCabinetId = visit.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
+      );
+      await DatabaseHelper.instance.updateVisit(visitWithCabinetId);
       notifyListeners();
     } catch (e) {
-      print('Failed to update visit: ${e.toString()}');
+      print('Failed to update visit: $e');
     }
   }
 
   Future<void> deleteVisit(String visitId) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot delete visit.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot delete visit.');
       return;
     }
     try {
-      await DatabaseHelper.instance.deleteVisit(
-        visitId,
-        cabinetCode,
-      ); // CHANGED
-      await loadPatients(); // This reloads patients, implicitly updating visit counts.
+      // CHANGED: Pass cabinetId
+      await DatabaseHelper.instance.deleteVisit(visitId, cabinetId);
+      await loadPatients(); // Reloads patients, updating visit counts.
       notifyListeners();
     } catch (e) {
-      print('Failed to delete visit: ${e.toString()}');
+      print('Failed to delete visit: $e');
     }
   }
 
   // --- Appointment related methods ---
   Future<void> loadAppointments() async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot load appointments.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot load appointments.');
       _appointments = [];
       notifyListeners();
       return;
     }
     try {
+      // CHANGED: Pass cabinetId
       _appointments = await DatabaseHelper.instance.getAllAppointments(
-        cabinetCode, // CHANGED: clientId -> cabinetCode
+        cabinetId,
       );
       notifyListeners();
     } catch (e) {
-      print('Failed to load appointments: ${e.toString()}');
+      print('Failed to load appointments: $e');
       _appointments = []; // Ensure list is cleared on error
     }
   }
 
   Future<void> addAppointment(Appointment appointment) async {
-    final cabinetCode = _currentCabinetCode;
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot add appointment.');
-      // Maybe show an error message to the user via a state variable
-      // notifyListeners(); // If you add an error state
-      return; // Exit early
-    }
-    try {
-      // Ensure the appointment object has the correct cabinet code
-      final appointmentWithCabinetCode = appointment.copyWith(
-        cabinetCode: cabinetCode,
-      );
-      await DatabaseHelper.instance.insertAppointment(
-        appointmentWithCabinetCode,
-      );
-      await loadAppointments(); // Reload the list after successful insert
-    } on PostgrestException catch (e) {
-      print('Error inserting appointment: $e');
-      // Handle the specific RLS error or show a user-friendly message
-      // e.g., ScaffoldMessenger.of(context).showSnackBar(...);
-      // Re-throw or handle as needed, but don't let it crash the provider state
-      rethrow; // Or handle it specifically
-    } catch (e) {
-      print('Failed to add appointment: $e');
-      // Handle other potential errors
-      // Maybe show a generic error message
-    }
-    // notifyListeners(); is called inside loadAppointments()
-  }
-
-  Future<void> updateAppointment(Appointment appointment) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot update appointment.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot add appointment.');
       return;
     }
     try {
-      final appointmentWithCabinetCode = appointment.copyWith(
-        cabinetCode: cabinetCode,
-      ); // CHANGED
-      await DatabaseHelper.instance.updateAppointment(
-        appointmentWithCabinetCode,
+      // Ensure the appointment object has the correct cabinet ID
+      // CHANGED: Use cabinetId in copyWith
+      final appointmentWithCabinetId = appointment.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
       );
+      await DatabaseHelper.instance.insertAppointment(appointmentWithCabinetId);
+      await loadAppointments(); // Reload the list after successful insert
+    } on PostgrestException catch (e) {
+      print('Error inserting appointment (Postgrest): $e');
+      rethrow;
+    } catch (e) {
+      print('Failed to add appointment: $e');
+    }
+  }
+
+  Future<void> updateAppointment(Appointment appointment) async {
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot update appointment.');
+      return;
+    }
+    try {
+      // CHANGED: Use cabinetId in copyWith
+      final appointmentWithCabinetId = appointment.copyWith(
+        cabinetId: cabinetId, // <-- CRUCIAL FIX: Use cabinetId parameter name
+      );
+      await DatabaseHelper.instance.updateAppointment(appointmentWithCabinetId);
       await loadAppointments();
     } catch (e) {
-      print('Failed to update appointment: ${e.toString()}');
+      print('Failed to update appointment: $e');
     }
   }
 
   Future<void> deleteAppointment(String appointmentId) async {
-    final cabinetCode = _currentCabinetCode; // CHANGED: clientId -> cabinetCode
-    if (cabinetCode == null) {
-      print('Error: Cabinet code not found. Cannot delete appointment.');
+    // CHANGED: cabinetCode -> cabinetId
+    final cabinetId = _currentCabinetId;
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot delete appointment.');
       return;
     }
     try {
-      await DatabaseHelper.instance.deleteAppointment(
-        appointmentId,
-        cabinetCode,
-      ); // CHANGED
+      // CHANGED: Pass cabinetId
+      await DatabaseHelper.instance.deleteAppointment(appointmentId, cabinetId);
       await loadAppointments();
     } catch (e) {
-      print('Failed to delete appointment: ${e.toString()}');
+      print('Failed to delete appointment: $e');
     }
   }
 
@@ -314,11 +317,12 @@ class PatientProvider with ChangeNotifier {
         .firstWhere(
           (p) => p.id == patientId,
           orElse: () => Patient(
-            id: 'unknown_id', // Provide a dummy String ID for orElse
+            id: 'unknown_id',
             name: 'Unknown',
             age: 0,
             gender: 'Other',
             phone: '',
+            // cabinetId: _currentCabinetId, // Optional if needed in constructor
           ),
         )
         .name;

@@ -13,7 +13,6 @@ class PdfHelper {
     List<Visit> visits,
   ) async {
     final pdf = pw.Document();
-
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.copyWith(
@@ -67,7 +66,9 @@ class PdfHelper {
             ['Problèmes antérieurs:', patient.previousDentalProblems ?? 'N/A'],
             ['Hygiène buccale:', patient.oralHygieneHabits ?? 'N/A'],
             ['Dernière visite dentaire:', patient.lastDentalVisit ?? 'N/A'],
-            ['Dernière radio:', patient.lastXRay ?? 'N/A'],
+            // --- FIXED: Corrected typo from 'lastXRay' to 'lastXray' ---
+            ['Dernière radio:', patient.lastXray ?? 'N/A'],
+            // --- END OF FIX ---
           ]),
           pw.SizedBox(height: 15),
           if (visits.isNotEmpty) ...[
@@ -79,12 +80,10 @@ class PdfHelper {
         ],
       ),
     );
-
     final String dir = (await getApplicationDocumentsDirectory()).path;
     final String path = '$dir/${patient.name}_Rapport_Patient.pdf';
     final File file = File(path);
     await file.writeAsBytes(await pdf.save());
-
     await OpenFilex.open(path);
   }
 
@@ -158,10 +157,10 @@ class PdfHelper {
   }
 
   static pw.Widget _buildVisitCard(Visit visit) {
-    final double totalAmount = visit.totalAmount ?? 0.0;
-    final double amountPaid = visit.amountPaid ?? 0.0;
-    final double remainingToPay = totalAmount - amountPaid;
-
+    // Note: remainingToPay was calculated but not used in the original code.
+    // final double totalAmount = visit.totalAmount ?? 0.0;
+    // final double amountPaid = visit.amountPaid ?? 0.0;
+    // final double remainingToPay = totalAmount - amountPaid;
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 10),
       padding: const pw.EdgeInsets.all(10),

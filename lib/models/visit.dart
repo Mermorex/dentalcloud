@@ -12,7 +12,7 @@ class Visit {
   final bool isPaid;
   final double? amountPaid;
   final double? totalAmount;
-  final String? cabinetCode; // CHANGED: clientId -> cabinetCode
+  final String? cabinetId;
 
   Visit({
     this.id,
@@ -27,7 +27,7 @@ class Visit {
     this.isPaid = false,
     this.amountPaid,
     this.totalAmount,
-    this.cabinetCode, // CHANGED: clientId -> cabinetCode
+    this.cabinetId,
   });
 
   Map<String, dynamic> toMap() => {
@@ -43,7 +43,7 @@ class Visit {
     'is_paid': isPaid,
     'amount_paid': amountPaid,
     'total_amount': totalAmount,
-    'cabinet_code': cabinetCode, // CHANGED: client_id -> cabinet_code
+    'cabinet_id': cabinetId,
   };
 
   factory Visit.fromMap(Map<String, dynamic> map) => Visit(
@@ -63,8 +63,7 @@ class Visit {
     totalAmount: map['total_amount'] != null
         ? (map['total_amount'] as num).toDouble()
         : null,
-    cabinetCode:
-        map['cabinet_code'] as String?, // CHANGED: client_id -> cabinet_code
+    cabinetId: map['cabinet_id'],
   );
 
   @override
@@ -86,7 +85,7 @@ class Visit {
     bool? isPaid,
     double? amountPaid,
     double? totalAmount,
-    String? cabinetCode, // CHANGED: clientId -> cabinetCode
+    String? cabinetId,
   }) {
     return Visit(
       id: id ?? this.id,
@@ -101,8 +100,7 @@ class Visit {
       isPaid: isPaid ?? this.isPaid,
       amountPaid: amountPaid ?? this.amountPaid,
       totalAmount: totalAmount ?? this.totalAmount,
-      cabinetCode:
-          cabinetCode ?? this.cabinetCode, // CHANGED: clientId -> cabinetCode
+      cabinetId: cabinetId ?? this.cabinetId, //
     );
   }
 }

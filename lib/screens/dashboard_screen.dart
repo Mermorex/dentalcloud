@@ -1,23 +1,24 @@
 // lib/screens/dashboard_screen.dart
+// (Subscription flow removed)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 // --- IMPORT THE NEW WIDGET ---
-import '../widgets/disconnect_button.dart'; // Import the new reusable component
+import '../widgets/disconnect_button.dart';
 import '../providers/patient_provider.dart';
+// --- REMOVED SubscriptionProvider import ---
+// import '../providers/subscription_provider.dart'; // <-- Removed Import
+// --- REMOVED TrialExpiredScreen import ---
+// import '../screens/trial_expired_screen.dart'; // <-- Removed Import
+// --- OTHER EXISTING IMPORTS ---
 import '../models/appointment.dart';
-import '../models/patient.dart'; // Import Patient model
-import '../screens/patient_detail_screen.dart'; // Import PatientDetailScreen
+import '../models/patient.dart';
+import '../screens/patient_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
-  // --- ADD THE CALLBACK PARAMETER ---
-  /// Callback function triggered when the user requests disconnection.
-  /// This should typically be provided by the parent screen (e.g., HomeScreen)
-  /// which handles the actual logout logic.
   final VoidCallback? onDisconnect;
-
-  const DashboardScreen({super.key, this.onDisconnect}); // Accept the callback
+  const DashboardScreen({super.key, this.onDisconnect});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -34,27 +35,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<PatientProvider>(context, listen: false);
-      provider.loadAppointments();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // <-- Made async
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
+      // Load appointments as before
+      patientProvider.loadAppointments();
+      // --- REMOVED SUBSCRIPTION CHECK ---
+      // The code that fetched subscription status here is removed.
+      // The dashboard will now load without checking subscription status.
     });
   }
-
-  // --- REMOVE THE OLD _handleDisconnect METHOD ---
-  /*
-  void _handleDisconnect() async {
-    print('User disconnected!');
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Déconnexion réussie!')));
-    Navigator.of(context).pushReplacementNamed('/login');
-  }
-  */
-  // --- END REMOVE ---
 
   @override
   Widget build(BuildContext context) {
     final patientProvider = Provider.of<PatientProvider>(context);
+    // --- REMOVED SubscriptionProvider ACCESS ---
+    // final subscriptionProvider = Provider.of<SubscriptionProvider>(
+    //   context,
+    // ); // <-- Removed Access
+    // --- REMOVED LOADING, ERROR, and SUBSCRIPTION STATUS CHECKS ---
+    // The dashboard will now always show its main content.
+
+    print(
+      "DashboardScreen build: Showing main dashboard content (subscription check removed).",
+    );
+
+    // --- SHOW MAIN DASHBOARD CONTENT ---
+    // The rest of your existing DashboardScreen build method goes here.
+    // Wrap the existing content in a Widget (like a Column or Container) for clarity.
     final List<Appointment> allAppointments = patientProvider.appointments;
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final DateTime now = DateTime.now();
@@ -66,23 +77,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String todayDate =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final String? currentCabinetName = patientProvider.currentCabinetName;
-    final String? currentCabinetCode = patientProvider.currentCabinetCode;
-
+    final String? currentCabinetId = patientProvider.currentCabinetId;
     String welcomeMessage;
     if (currentCabinetName != null && currentCabinetName.isNotEmpty) {
       welcomeMessage = 'Bienvenue au cabinet "$currentCabinetName"';
-    } else if (currentCabinetCode != null) {
-      welcomeMessage = 'Bienvenue au cabinet "$currentCabinetCode"';
+    } else if (currentCabinetId != null && currentCabinetId.isNotEmpty) {
+      welcomeMessage = 'Bienvenue au cabinet (ID: "$currentCabinetId")';
     } else {
       welcomeMessage = 'Tableau de bord';
     }
-
     final List<Appointment> todayAppointments = allAppointments.where((
       appointment,
     ) {
       return appointment.date == todayDate;
     }).toList()..sort((a, b) => a.time.compareTo(b.time));
-
     final List<Appointment> thisWeekAppointments =
         allAppointments.where((appointment) {
           final DateTime appointmentDate = DateTime.parse(appointment.date);
@@ -98,6 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return a.time.compareTo(b.time);
         });
 
+    // Return the main dashboard content
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SingleChildScrollView(
@@ -106,7 +115,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Enhanced Header with Welcome Message - Improved Responsiveness
+              // --- YOUR EXISTING DASHBOARD CONTENT WIDGETS GO HERE ---
+              // Enhanced Header with Welcome Message
               Padding(
                 padding: EdgeInsets.only(
                   bottom: isTablet ? 24.0 : 16.0,
@@ -114,56 +124,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Decide whether to show the disconnect button based on width or always on tablet
                     final bool showDisconnectButton =
-                        isTablet ||
-                        constraints.maxWidth > 350; // Adjusted threshold
-                    // Prepare the name/code to display
+                        constraints.maxWidth <= 600;
                     String? displayCabinetInfo;
                     if (currentCabinetName != null &&
                         currentCabinetName.isNotEmpty) {
-                      displayCabinetInfo =
-                          currentCabinetName; // Show only the name
-                    } else if (currentCabinetCode != null &&
-                        currentCabinetCode.isNotEmpty) {
-                      displayCabinetInfo =
-                          currentCabinetCode; // Show only the code
-                      // If you prefer to keep 'au cabinet' for the code, you could do:
-                      // displayCabinetInfo = 'au cabinet "$currentCabinetCode"';
+                      displayCabinetInfo = currentCabinetName;
+                    } else if (currentCabinetId != null &&
+                        currentCabinetId.isNotEmpty) {
+                      displayCabinetInfo = currentCabinetId;
                     }
-                    // If neither name nor code is available, displayCabinetInfo remains null
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Welcome message area
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Use FittedBox to keep everything on one line and scale down if needed
                               FittedBox(
-                                fit: BoxFit
-                                    .scaleDown, // Scale down only, don't distort
-                                alignment: Alignment
-                                    .centerLeft, // Align text to the left
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
                                 child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment
-                                      .baseline, // Align text baselines
-                                  textBaseline: TextBaseline
-                                      .alphabetic, // Required for Baseline
-                                  mainAxisSize: MainAxisSize
-                                      .min, // Take only as much space as needed
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Static "Bienvenue" part
                                     Text(
-                                      'Bienvenue au ', // Note the space at the end
+                                      'Bienvenue au ',
                                       style: GoogleFonts.montserrat(
                                         fontSize: isTablet ? 28 : 24,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.teal.shade800,
                                       ),
                                     ),
-                                    // Dynamic cabinet name/code part (only if available)
                                     if (displayCabinetInfo != null &&
                                         displayCabinetInfo.isNotEmpty)
                                       Text(
@@ -172,15 +166,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           fontSize: isTablet ? 28 : 24,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.teal.shade800,
-                                          // Optional: Slightly different style for the name
-                                          // fontStyle: FontStyle.italic,
-                                          // decoration: TextDecoration.underline,
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
-                              // Optional: Keep the subtitle, or make it conditional too
                               if (displayCabinetInfo != null &&
                                   displayCabinetInfo.isNotEmpty)
                                 Text(
@@ -190,47 +180,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     fontWeight: FontWeight.normal,
                                     color: Colors.grey.shade600,
                                   ),
-                                  overflow: TextOverflow
-                                      .ellipsis, // Prevent subtitle overflow too
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                             ],
                           ),
                         ),
-                        // Conditional spacing and elements
                         if (showDisconnectButton) ...[
-                          const Spacer(), // Pushes subsequent widgets to the right
-                          // --- REPLACE THE OLD ICONBUTTON ---
+                          const Spacer(),
                           DisconnectButton(
                             onPressed:
                                 widget.onDisconnect ??
                                 () {
-                                  // Fallback if onDisconnect wasn't provided correctly
                                   print(
                                     "DashboardScreen: Disconnect callback not provided or null.",
                                   );
-                                  // Optionally show an error or navigate anyway
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
                                         'Erreur: Déconnexion non configurée correctement.',
+                                        style: GoogleFonts.montserrat(),
                                       ),
                                     ),
                                   );
-                                  // You might still want to navigate to login as a fallback
+                                  // Consider navigating via HomeScreen's method if possible,
+                                  // or directly if necessary (less ideal).
                                   Navigator.of(
                                     context,
                                   ).pushReplacementNamed('/login');
                                 },
-                            isTablet: isTablet, // Pass screen size info
-                            isInAppBar:
-                                true, // Indicate it's in the header/app bar area
+                            isTablet: isTablet,
+                            isInAppBar: true,
                           ),
-                          // --- END REPLACE ---
                           SizedBox(width: isTablet ? 12 : 8),
                         ] else
-                          SizedBox(
-                            width: isTablet ? 12 : 8,
-                          ), // Small space if button hidden
+                          SizedBox(width: isTablet ? 12 : 8),
                         Image.asset(
                           'assets/images/tooth_logo.png',
                           width: isTablet ? 48 : 36,
@@ -372,7 +355,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           statusTranslations: _statusTranslations,
                           isImportant: true,
                           isTablet: isTablet,
-                          // Add the onTap callback for navigation
                           onTap: () async {
                             try {
                               final patient = patientProvider.patients
@@ -467,7 +449,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           statusTranslations: _statusTranslations,
                           isImportant: false,
                           isTablet: isTablet,
-                          // Add the onTap callback for navigation
                           onTap: () async {
                             try {
                               final patient = patientProvider.patients

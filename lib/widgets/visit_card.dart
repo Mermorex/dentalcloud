@@ -5,19 +5,21 @@ import 'package:provider/provider.dart';
 import '../models/visit.dart';
 import '../providers/patient_provider.dart';
 import '../screens/edit_visit_screen.dart';
-import 'visit_detail_row.dart';
+import 'visit_detail_row.dart'; // Ensure this import is correct
 
 class VisitCard extends StatefulWidget {
+  // --- Ensure the constructor explicitly defines required parameters ---
   final Visit visit;
-  final String patientId;
-  final VoidCallback onVisitUpdated;
+  final String patientId; // This parameter is required based on previous errors
+  final VoidCallback onVisitUpdated; // Callback for refresh logic
 
   const VisitCard({
     super.key,
     required this.visit,
-    required this.patientId,
-    required this.onVisitUpdated,
+    required this.patientId, // Explicitly required
+    required this.onVisitUpdated, // Explicitly required
   });
+  // --- END OF FIX ---
 
   @override
   State<VisitCard> createState() => _VisitCardState();
@@ -27,6 +29,8 @@ class _VisitCardState extends State<VisitCard> {
   bool _isExpanded = false; // State to manage expansion
 
   String _getPaymentStatus(Visit visit) {
+    // --- FIXED: Use consistent property names (amountPaid, totalAmount) ---
+    // Ensure these property names match your Visit model definition
     if (visit.totalAmount == null || visit.totalAmount == 0) {
       return 'Non spécifié';
     }
@@ -37,6 +41,7 @@ class _VisitCardState extends State<VisitCard> {
       return 'Payé';
     }
     return 'Partiellement payé';
+    // --- END OF FIX ---
   }
 
   Color _getPaymentStatusColor(Visit visit) {
@@ -69,337 +74,326 @@ class _VisitCardState extends State<VisitCard> {
 
   @override
   Widget build(BuildContext context) {
+    // --- FIXED: Use consistent property names from Visit model ---
+    // Ensure these property names match your Visit model definition
     final double totalAmount = widget.visit.totalAmount ?? 0.0;
     final double amountPaid = widget.visit.amountPaid ?? 0.0;
+    // --- END OF FIX ---
     final double amountRemaining = totalAmount - amountPaid;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 4.0),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      shadowColor: Colors.black.withOpacity(0.15),
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        // Use InkWell for tap feedback
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          setState(() {
-            _isExpanded = !_isExpanded; // Toggle the expanded state
-          });
-        },
+        onTap: () => setState(() => _isExpanded = !_isExpanded),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.grey.shade100],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Always visible Header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 14.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade100,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Date and Time Display
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.teal.shade700,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.calendar_today,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.visit.date, // Display only date initially
-                              style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 17,
-                                color: Colors.teal.shade900,
-                              ),
-                            ),
-                            if (_isExpanded) // Show time only when expanded
-                              Text(
-                                widget.visit.time,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 15,
-                                  color: Colors.teal.shade700,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
+              // --- Visit Header (Date, Time, Expand Icon) ---
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade700,
+                      shape: BoxShape.circle,
                     ),
-                    // Action Buttons (always visible or move them inside expanded content)
-                    // For this example, keeping them always visible for quick access.
+                    child: const Icon(
+                      Icons.calendar_today,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.visit.date, // Display only date initially
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Colors.teal.shade900,
+                        ),
+                      ),
+                      if (_isExpanded) // Show time only when expanded
+                        Text(
+                          widget
+                              .visit
+                              .time, // Ensure 'time' property exists on Visit
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.teal.shade700,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // --- Expanded Content ---
+              if (_isExpanded)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- Visit Information Section ---
+                    _buildSectionTitle('INFORMATIONS DE VISITE'),
+                    const SizedBox(height: 12),
+                    // --- FIXED: Use consistent property names from Visit model ---
+                    // Ensure these property names match your Visit model definition
+                    VisitDetailRow(label: 'But', value: widget.visit.purpose),
+                    VisitDetailRow(
+                      label: 'Constatations',
+                      value: widget.visit.findings,
+                    ),
+                    VisitDetailRow(
+                      label: 'Traitement',
+                      value: widget.visit.treatment,
+                    ),
+                    if (widget.visit.notes.isNotEmpty) // Check notes content
+                      VisitDetailRow(label: 'Notes', value: widget.visit.notes),
+                    // --- END OF FIX ---
+
+                    // --- Next Visit Section ---
+                    if (widget.visit.nextVisitDate != null &&
+                        widget
+                            .visit
+                            .nextVisitDate!
+                            .isNotEmpty) // Check next visit date
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildSectionTitle('PROCHAIN RENDEZ-VOUS'),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.event,
+                                  color: Colors.blue.shade700,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    // --- FIXED: Use consistent property name ---
+                                    // Ensure 'nextVisitDate' property exists on Visit
+                                    widget.visit.nextVisitDate!,
+                                    // --- END OF FIX ---
+                                    style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.blue.shade900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    // --- Payment Information Section ---
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('INFORMATIONS DE PAIEMENT'),
+                    const SizedBox(height: 12),
+                    // Payment Status
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getPaymentStatusColor(
+                          widget.visit,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getPaymentStatusColor(
+                            widget.visit,
+                          ).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _getPaymentStatusIcon(widget.visit),
+                            color: _getPaymentStatusColor(widget.visit),
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Statut: ${_getPaymentStatus(widget.visit)}',
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: _getPaymentStatusColor(widget.visit),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Payment Amount Details
+                    if (totalAmount >
+                        0) // Show details only if total amount exists
+                      VisitDetailRow(
+                        label: 'Montant total',
+                        value: '${totalAmount.toStringAsFixed(2)} TND',
+                        valueColor: Colors.grey.shade800,
+                        valueFontWeight: FontWeight.w600,
+                      ),
+                    if (amountPaid > 0) // Show paid amount only if it exists
+                      VisitDetailRow(
+                        label: 'Montant payé',
+                        value: '${amountPaid.toStringAsFixed(2)} TND',
+                        valueColor: Colors.green.shade700,
+                        valueFontWeight: FontWeight.bold,
+                      ),
+                    if (amountRemaining >
+                        0) // Show remaining amount only if it exists
+                      VisitDetailRow(
+                        label: 'Reste à payer',
+                        value: '${amountRemaining.toStringAsFixed(2)} TND',
+                        valueColor: Colors.red.shade700,
+                        valueFontWeight: FontWeight.bold,
+                      ),
+
+                    // --- Action Buttons ---
+                    const SizedBox(height: 20),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildActionButton(
                           icon: Icons.edit,
-                          color: Colors.blue.shade600,
-                          backgroundColor: Colors.blue.shade100,
-                          tooltip: 'Modifier la visite',
+                          color: Colors.teal.shade700,
+                          backgroundColor: Colors.teal.shade50,
+                          tooltip: 'Modifier',
                           onPressed: () async {
+                            // --- FIXED: Pass the required patientId to EditVisitScreen ---
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => EditVisitScreen(
+                                builder: (context) => EditVisitScreen(
                                   visit: widget.visit,
-                                  patientId: widget.patientId,
+                                  patientId: widget
+                                      .patientId, // <-- PASS THE REQUIRED patientId
                                 ),
                               ),
                             );
+                            // Refresh parent list after editing
                             widget.onVisitUpdated();
                           },
                         ),
-                        const SizedBox(width: 10),
                         _buildActionButton(
                           icon: Icons.delete,
-                          color: Colors.red.shade600,
-                          backgroundColor: Colors.red.shade100,
-                          tooltip: 'Supprimer la visite',
+                          color: Colors.red.shade700,
+                          backgroundColor: Colors.red.shade50,
+                          tooltip: 'Supprimer',
                           onPressed: () async {
-                            final bool? confirm = await showDialog<bool>(
+                            final bool? confirm = await showDialog(
                               context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(
-                                  'Supprimer la visite',
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                content: Text(
-                                  'Êtes-vous sûr de vouloir supprimer cette visite ?',
-                                  style: GoogleFonts.montserrat(),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Colors.grey.shade700,
-                                    ),
-                                    child: Text(
-                                      'Annuler',
-                                      style: GoogleFonts.montserrat(),
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text(
+                                    'Confirmer la suppression',
+                                    style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      if (widget.visit.id != null) {
-                                        await Provider.of<PatientProvider>(
-                                          context,
-                                          listen: false,
-                                        ).deleteVisit(widget.visit.id!);
-                                        Navigator.of(context).pop(true);
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red.shade600,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: Text(
-                                      'Supprimer',
-                                      style: GoogleFonts.montserrat(),
-                                    ),
+                                  content: Text(
+                                    'Êtes-vous sûr de vouloir supprimer cette visite?',
+                                    style: GoogleFonts.montserrat(),
                                   ),
-                                ],
-                              ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: Text(
+                                        'Annuler',
+                                        style: GoogleFonts.montserrat(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                    ),
+                                    TextButton(
+                                      child: Text(
+                                        'Supprimer',
+                                        style: GoogleFonts.montserrat(
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                    ),
+                                  ],
+                                );
+                              },
                             );
+
                             if (confirm == true) {
-                              widget
-                                  .onVisitUpdated(); // This line is crucial for refresh
+                              try {
+                                // --- FIXED: Use PatientProvider for deletion, it handles cabinetId ---
+                                await Provider.of<PatientProvider>(
+                                  context,
+                                  listen: false,
+                                ).deleteVisit(widget.visit.id!);
+                                // Refresh parent list after deletion
+                                widget.onVisitUpdated();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Visite supprimée avec succès!',
+                                        style: GoogleFonts.montserrat(),
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  print("VisitCard: Error deleting visit: $e");
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Erreur lors de la suppression: $e',
+                                        style: GoogleFonts.montserrat(),
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
                             }
                           },
                         ),
                       ],
                     ),
                   ],
-                ),
-              ),
-              // Expanded Content
-              AnimatedSize(
-                // Animates the size change smoothly
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _isExpanded
-                    ? Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Visit Information Section
-                            _buildSectionTitle('INFORMATIONS DE VISITE'),
-                            const SizedBox(height: 12),
-                            VisitDetailRow(
-                              label: 'But',
-                              value: widget.visit.purpose,
-                            ),
-                            VisitDetailRow(
-                              label: 'Constatations',
-                              value: widget.visit.findings,
-                            ),
-                            VisitDetailRow(
-                              label: 'Traitement',
-                              value: widget.visit.treatment,
-                            ),
-                            if (widget.visit.notes.isNotEmpty)
-                              VisitDetailRow(
-                                label: 'Notes',
-                                value: widget.visit.notes,
-                              ),
-
-                            // Next Visit Section
-                            if (widget.visit.nextVisitDate != null &&
-                                widget.visit.nextVisitDate!.isNotEmpty)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 20),
-                                  _buildSectionTitle('PROCHAIN RENDEZ-VOUS'),
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.blue.shade200,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.event,
-                                          color: Colors.blue.shade700,
-                                          size: 22,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            widget.visit.nextVisitDate!,
-                                            style: GoogleFonts.montserrat(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Colors.blue.shade900,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                            // Payment Information Section
-                            const SizedBox(height: 20),
-                            _buildSectionTitle('INFORMATIONS DE PAIEMENT'),
-                            const SizedBox(height: 12),
-
-                            // Payment Status
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getPaymentStatusColor(
-                                  widget.visit,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _getPaymentStatusColor(
-                                    widget.visit,
-                                  ).withOpacity(0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _getPaymentStatusIcon(widget.visit),
-                                    color: _getPaymentStatusColor(widget.visit),
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Statut: ${_getPaymentStatus(widget.visit)}',
-                                    style: GoogleFonts.montserrat(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: _getPaymentStatusColor(
-                                        widget.visit,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Payment Amount Details
-                            if (totalAmount > 0)
-                              VisitDetailRow(
-                                label: 'Montant total',
-                                value: '${totalAmount.toStringAsFixed(2)} TND',
-                                valueColor: Colors.grey.shade800,
-                                valueFontWeight: FontWeight.w600,
-                              ),
-
-                            if (amountPaid > 0)
-                              VisitDetailRow(
-                                label: 'Montant payé',
-                                value: '${amountPaid.toStringAsFixed(2)} TND',
-                                valueColor: Colors.green.shade700,
-                                valueFontWeight: FontWeight.bold,
-                              ),
-
-                            if (amountRemaining > 0)
-                              VisitDetailRow(
-                                label: 'Reste à payer',
-                                value:
-                                    '${amountRemaining.toStringAsFixed(2)} TND',
-                                valueColor: Colors.red.shade700,
-                                valueFontWeight: FontWeight.bold,
-                              ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(), // Hides content when collapsed
-              ),
+                )
+              else
+                const SizedBox.shrink(), // Hides content when collapsed
             ],
           ),
         ),

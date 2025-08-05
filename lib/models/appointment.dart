@@ -9,7 +9,7 @@ class Appointment {
   final String notes;
   final String status;
   String? patientName;
-  final String? cabinetCode; // CHANGED: clientId -> cabinetCode
+  final String? cabinetId;
 
   Appointment({
     String? id,
@@ -19,7 +19,7 @@ class Appointment {
     required this.notes,
     this.status = 'Scheduled',
     this.patientName,
-    this.cabinetCode, // CHANGED: clientId -> cabinetCode
+    this.cabinetId,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
@@ -30,7 +30,7 @@ class Appointment {
       'time': time,
       'notes': notes,
       'status': status,
-      'cabinet_code': cabinetCode, // CHANGED: client_id -> cabinet_code
+      'cabinet_id': cabinetId,
     };
   }
 
@@ -45,8 +45,7 @@ class Appointment {
       patientName: map['patients'] != null && map['patients'] is Map
           ? (map['patients'] as Map)['name']
           : null,
-      cabinetCode:
-          map['cabinet_code'] as String?, // CHANGED: client_id -> cabinet_code
+      cabinetId: map['cabinet_id'],
     );
   }
 
@@ -58,7 +57,7 @@ class Appointment {
     String? notes,
     String? status,
     String? patientName,
-    String? cabinetCode, // CHANGED: clientId -> cabinetCode
+    String? cabinetId,
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -68,8 +67,8 @@ class Appointment {
       notes: notes ?? this.notes,
       status: status ?? this.status,
       patientName: patientName ?? this.patientName,
-      cabinetCode:
-          cabinetCode ?? this.cabinetCode, // CHANGED: clientId -> cabinetCode
+      cabinetId:
+          cabinetId ?? this.cabinetId, // CHANGED: clientId -> cabinetCode
     );
   }
 }

@@ -32,7 +32,7 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
 
   final Map<String, String> _statusTranslations = {
     'Scheduled': 'Programmé',
-    'Completed': 'Terminé', // Corrected translation
+    'Completed': 'Reporté', // Corrected translation
     'Cancelled': 'Annulé',
     'No Show': 'Absent',
   };

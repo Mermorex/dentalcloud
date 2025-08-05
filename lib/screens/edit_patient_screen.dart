@@ -2,9 +2,9 @@
 import 'package:dental/providers/patient_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart'; // Import google_fonts
+import 'package:google_fonts/google_fonts.dart';
 import '../models/patient.dart';
-import '../widgets/main_button.dart'; // Import the MainButton widget
+import '../widgets/main_button.dart';
 
 class EditPatientScreen extends StatefulWidget {
   final Patient patient;
@@ -16,172 +16,263 @@ class EditPatientScreen extends StatefulWidget {
 
 class _EditPatientScreenState extends State<EditPatientScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl;
-  late TextEditingController _ageCtrl;
-  late TextEditingController _phoneCtrl;
-  late TextEditingController _dobCtrl;
-  late TextEditingController _emailCtrl;
-  late TextEditingController _addressCtrl;
-  late TextEditingController _emergencyContactNameCtrl;
-  late TextEditingController _emergencyContactPhoneCtrl;
-  late TextEditingController _primaryLanguageCtrl;
-  late TextEditingController _alertsCtrl;
-  late TextEditingController _systemicDiseasesCtrl;
-  late TextEditingController _medicationsCtrl;
-  late TextEditingController _allergiesCtrl;
-  late TextEditingController _pastSurgeriesCtrl;
-  late TextEditingController _lifestyleFactorsCtrl;
-  late TextEditingController _pregnancyLactationStatusCtrl;
-  late TextEditingController _chiefComplaintCtrl;
-  late TextEditingController _pastDentalTreatmentsCtrl;
-  late TextEditingController _previousDentalProblemsCtrl;
-  late TextEditingController _oralHygieneHabitsCtrl;
-  late TextEditingController _lastDentalVisitCtrl;
-  late TextEditingController _lastXRayCtrl;
-  late String _selectedGender; // Default gender
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _ageCtrl;
+  late final TextEditingController _phoneCtrl;
+  late final TextEditingController _dobCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _addressCtrl;
+  late final TextEditingController _emergencyContactNameCtrl;
+  late final TextEditingController _emergencyContactPhoneCtrl;
+  late final TextEditingController _primaryLanguageCtrl;
+  late final TextEditingController _alertsCtrl;
+  late final TextEditingController _systemicDiseasesCtrl;
+  late final TextEditingController _medicationsCtrl;
+  late final TextEditingController _allergiesCtrl;
+  late final TextEditingController _pastSurgeriesCtrl;
+  late final TextEditingController _lifestyleFactorsCtrl;
+  late final TextEditingController _pregnancyLactationStatusCtrl;
+  late final TextEditingController _chiefComplaintCtrl;
+  late final TextEditingController _pastDentalTreatmentsCtrl;
+  late final TextEditingController _previousDentalProblemsCtrl;
+  late final TextEditingController _oralHygieneHabitsCtrl;
+  late final TextEditingController _lastDentalVisitCtrl;
+  late final TextEditingController _lastXRayCtrl;
+  String? _selectedGender; // This will hold the selected gender
 
   @override
   void initState() {
     super.initState();
-    final patient = widget.patient;
-    _nameCtrl = TextEditingController(text: patient.name);
-    _ageCtrl = TextEditingController(text: patient.age.toString());
-    _phoneCtrl = TextEditingController(text: patient.phone);
-    _dobCtrl = TextEditingController(text: patient.dateOfBirth);
-    _emailCtrl = TextEditingController(text: patient.email);
-    _addressCtrl = TextEditingController(text: patient.address);
+    // Initialize controllers with existing patient data
+    _nameCtrl = TextEditingController(text: widget.patient.name);
+    _ageCtrl = TextEditingController(
+      text: widget.patient.age?.toString() ?? '',
+    );
+    _phoneCtrl = TextEditingController(text: widget.patient.phone ?? '');
+    _dobCtrl = TextEditingController(text: widget.patient.dateOfBirth ?? '');
+    _emailCtrl = TextEditingController(text: widget.patient.email ?? '');
+    _addressCtrl = TextEditingController(text: widget.patient.address ?? '');
     _emergencyContactNameCtrl = TextEditingController(
-      text: patient.emergencyContactName,
+      text: widget.patient.emergencyContactName ?? '',
     );
     _emergencyContactPhoneCtrl = TextEditingController(
-      text: patient.emergencyContactPhone,
+      text: widget.patient.emergencyContactPhone ?? '',
     );
-    _primaryLanguageCtrl = TextEditingController(text: patient.primaryLanguage);
-    _alertsCtrl = TextEditingController(text: patient.alerts);
+    _primaryLanguageCtrl = TextEditingController(
+      text: widget.patient.primaryLanguage ?? '',
+    );
+    _alertsCtrl = TextEditingController(text: widget.patient.alerts ?? '');
     _systemicDiseasesCtrl = TextEditingController(
-      text: patient.systemicDiseases,
+      text: widget.patient.systemicDiseases ?? '',
     );
-    _medicationsCtrl = TextEditingController(text: patient.medications);
-    _allergiesCtrl = TextEditingController(text: patient.allergies);
+    _medicationsCtrl = TextEditingController(
+      text: widget.patient.medications ?? '',
+    );
+    _allergiesCtrl = TextEditingController(
+      text: widget.patient.allergies ?? '',
+    );
     _pastSurgeriesCtrl = TextEditingController(
-      text: patient.pastSurgeriesHospitalizations,
+      text: widget.patient.pastSurgeriesHospitalizations ?? '',
     );
     _lifestyleFactorsCtrl = TextEditingController(
-      text: patient.lifestyleFactors,
+      text: widget.patient.lifestyleFactors ?? '',
     );
     _pregnancyLactationStatusCtrl = TextEditingController(
-      text: patient.pregnancyLactationStatus,
+      text: widget.patient.pregnancyLactationStatus ?? '',
     );
-    _chiefComplaintCtrl = TextEditingController(text: patient.chiefComplaint);
+    _chiefComplaintCtrl = TextEditingController(
+      text: widget.patient.chiefComplaint ?? '',
+    );
     _pastDentalTreatmentsCtrl = TextEditingController(
-      text: patient.pastDentalTreatments,
+      text: widget.patient.pastDentalTreatments ?? '',
     );
     _previousDentalProblemsCtrl = TextEditingController(
-      text: patient.previousDentalProblems,
+      text: widget.patient.previousDentalProblems ?? '',
     );
     _oralHygieneHabitsCtrl = TextEditingController(
-      text: patient.oralHygieneHabits,
+      text: widget.patient.oralHygieneHabits ?? '',
     );
-    _lastDentalVisitCtrl = TextEditingController(text: patient.lastDentalVisit);
-    _lastXRayCtrl = TextEditingController(text: patient.lastXRay);
-    // Set _selectedGender, ensuring it's one of 'Male' or 'Female'
-    if (patient.gender == 'Other') {
-      _selectedGender =
-          'Male'; // Default to Male if patient's gender was 'Other'
+    _lastDentalVisitCtrl = TextEditingController(
+      text: widget.patient.lastDentalVisit ?? '',
+    );
+    _lastXRayCtrl = TextEditingController(text: widget.patient.lastXray ?? '');
+
+    // --- POTENTIAL FIX: Ensure _selectedGender is valid ---
+    // Check if the patient's gender from DB is a valid option.
+    // If not, set _selectedGender to null to avoid DropdownButton assertion error.
+    final validGenders = ['Male', 'Female'];
+    if (widget.patient.gender != null &&
+        validGenders.contains(widget.patient.gender)) {
+      _selectedGender = widget.patient.gender;
     } else {
-      _selectedGender = patient.gender;
+      _selectedGender = null; // Or a default like validGenders.first if desired
+    }
+    // --- END OF POTENTIAL FIX ---
+  }
+
+  Future<void> _selectDate(TextEditingController controller) async {
+    DateTime? initialDate = controller.text.isNotEmpty
+        ? DateTime.tryParse(controller.text)
+        : null;
+    initialDate ??= DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.teal,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.teal,
+                textStyle: GoogleFonts.montserrat(),
+              ),
+            ),
+            textTheme: TextTheme(
+              titleLarge: GoogleFonts.montserrat(),
+              bodyLarge: GoogleFonts.montserrat(),
+              bodyMedium: GoogleFonts.montserrat(),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = picked.toIso8601String().substring(0, 10);
+      });
     }
   }
 
-  void _save() async {
-    // Made _save async
+  Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
-      final updatedPatient = Patient(
-        id: widget.patient.id, // Keep the existing ID
-        name: _nameCtrl.text,
-        age: int.parse(_ageCtrl.text),
-        gender: _selectedGender,
-        phone: _phoneCtrl.text,
-        dateOfBirth: _dobCtrl.text,
-        email: _emailCtrl.text,
-        address: _addressCtrl.text,
-        emergencyContactName: _emergencyContactNameCtrl.text,
-        emergencyContactPhone: _emergencyContactPhoneCtrl.text,
-        primaryLanguage: _primaryLanguageCtrl.text,
-        alerts: _alertsCtrl.text,
-        systemicDiseases: _systemicDiseasesCtrl.text,
-        medications: _medicationsCtrl.text,
-        allergies: _allergiesCtrl.text,
-        pastSurgeriesHospitalizations: _pastSurgeriesCtrl.text,
-        lifestyleFactors: _lifestyleFactorsCtrl.text,
-        pregnancyLactationStatus: _pregnancyLactationStatusCtrl.text,
-        chiefComplaint: _chiefComplaintCtrl.text,
-        pastDentalTreatments: _pastDentalTreatmentsCtrl.text,
-        previousDentalProblems: _previousDentalProblemsCtrl.text,
-        oralHygieneHabits: _oralHygieneHabitsCtrl.text,
-        lastDentalVisit: _lastDentalVisitCtrl.text,
-        lastXRay: _lastXRayCtrl.text,
-      );
-      try {
-        await Provider.of<PatientProvider>(
-          context,
-          listen: false,
-        ).updatePatient(updatedPatient);
-        if (!mounted) {
-          return; // Check mounted before showing SnackBar or popping
-        }
+      _formKey.currentState!.save();
+      final int? age = _ageCtrl.text.isNotEmpty
+          ? int.tryParse(_ageCtrl.text)
+          : null;
+      if (age != null && age < 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Patient modifié avec succès !',
-              style: GoogleFonts.montserrat(),
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(
-          context,
-        ).pop(updatedPatient); // Go back and pass the updated patient
-      } catch (e) {
-        if (!mounted) return; // Check mounted if an error occurs
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erreur lors de la modification du patient: $e',
+              'L\'âge ne peut pas être négatif.',
               style: GoogleFonts.montserrat(),
             ),
             backgroundColor: Colors.red,
           ),
         );
+        return;
+      }
+
+      // --- POTENTIAL FIX: Validate gender if required ---
+      // If gender is required, uncomment the next lines:
+      /*
+      if (_selectedGender == null || _selectedGender!.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Text(
+               'Le sexe du patient est requis.',
+               style: GoogleFonts.montserrat(),
+             ),
+             backgroundColor: Colors.red,
+           ),
+         );
+         return;
+       }
+       */
+      // --- END OF POTENTIAL FIX ---
+
+      final updatedPatient = widget.patient.copyWith(
+        name: _nameCtrl.text,
+        age: age,
+        gender:
+            _selectedGender, // Use the potentially validated _selectedGender
+        phone: _phoneCtrl.text,
+        dateOfBirth: _dobCtrl.text,
+        email: _emailCtrl.text.isEmpty ? null : _emailCtrl.text,
+        address: _addressCtrl.text.isEmpty ? null : _addressCtrl.text,
+        emergencyContactName: _emergencyContactNameCtrl.text.isEmpty
+            ? null
+            : _emergencyContactNameCtrl.text,
+        emergencyContactPhone: _emergencyContactPhoneCtrl.text.isEmpty
+            ? null
+            : _emergencyContactPhoneCtrl.text,
+        primaryLanguage: _primaryLanguageCtrl.text.isEmpty
+            ? null
+            : _primaryLanguageCtrl.text,
+        alerts: _alertsCtrl.text.isEmpty ? null : _alertsCtrl.text,
+        systemicDiseases: _systemicDiseasesCtrl.text.isEmpty
+            ? null
+            : _systemicDiseasesCtrl.text,
+        medications: _medicationsCtrl.text.isEmpty
+            ? null
+            : _medicationsCtrl.text,
+        allergies: _allergiesCtrl.text.isEmpty ? null : _allergiesCtrl.text,
+        pastSurgeriesHospitalizations: _pastSurgeriesCtrl.text.isEmpty
+            ? null
+            : _pastSurgeriesCtrl.text,
+        lifestyleFactors: _lifestyleFactorsCtrl.text.isEmpty
+            ? null
+            : _lifestyleFactorsCtrl.text,
+        pregnancyLactationStatus: _pregnancyLactationStatusCtrl.text.isEmpty
+            ? null
+            : _pregnancyLactationStatusCtrl.text,
+        chiefComplaint: _chiefComplaintCtrl.text.isEmpty
+            ? null
+            : _chiefComplaintCtrl.text,
+        pastDentalTreatments: _pastDentalTreatmentsCtrl.text.isEmpty
+            ? null
+            : _pastDentalTreatmentsCtrl.text,
+        previousDentalProblems: _previousDentalProblemsCtrl.text.isEmpty
+            ? null
+            : _previousDentalProblemsCtrl.text,
+        oralHygieneHabits: _oralHygieneHabitsCtrl.text.isEmpty
+            ? null
+            : _oralHygieneHabitsCtrl.text,
+        lastDentalVisit: _lastDentalVisitCtrl.text.isEmpty
+            ? null
+            : _lastDentalVisitCtrl.text,
+        lastXray: _lastXRayCtrl.text.isEmpty ? null : _lastXRayCtrl.text,
+      );
+
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
+      try {
+        await patientProvider.updatePatient(updatedPatient);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Patient ${updatedPatient.name} mis à jour avec succès !',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Erreur lors de la mise à jour : $e',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _ageCtrl.dispose();
-    _phoneCtrl.dispose();
-    _dobCtrl.dispose();
-    _emailCtrl.dispose();
-    _addressCtrl.dispose();
-    _emergencyContactNameCtrl.dispose();
-    _emergencyContactPhoneCtrl.dispose();
-    _primaryLanguageCtrl.dispose();
-    _alertsCtrl.dispose();
-    _systemicDiseasesCtrl.dispose();
-    _medicationsCtrl.dispose();
-    _allergiesCtrl.dispose();
-    _pastSurgeriesCtrl.dispose();
-    _lifestyleFactorsCtrl.dispose();
-    _pregnancyLactationStatusCtrl.dispose();
-    _chiefComplaintCtrl.dispose();
-    _pastDentalTreatmentsCtrl.dispose();
-    _previousDentalProblemsCtrl.dispose();
-    _oralHygieneHabitsCtrl.dispose();
-    _lastDentalVisitCtrl.dispose();
-    _lastXRayCtrl.dispose();
-    super.dispose();
   }
 
   Widget _buildSectionHeader(String title) {
@@ -198,7 +289,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
     );
   }
 
-  // Modified _buildSection to include card-like styling
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -208,7 +298,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
       children: [
         _buildSectionHeader(title),
         Container(
-          margin: const EdgeInsets.only(bottom: 20.0), // Space between sections
+          margin: const EdgeInsets.only(bottom: 20.0),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -220,7 +310,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(20.0), // Inner padding for the card
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -262,7 +352,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15.0),
-            borderSide: BorderSide(color: Colors.teal, width: 2.5),
+            borderSide: const BorderSide(color: Colors.teal, width: 2.5),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15.0),
@@ -305,48 +395,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
     );
   }
 
-  Future<void> _selectDate(TextEditingController controller) async {
-    DateTime? initialDate;
-    if (controller.text.isNotEmpty) {
-      initialDate = DateTime.tryParse(controller.text);
-    }
-    initialDate ??= DateTime.now();
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.teal,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.teal,
-                textStyle: GoogleFonts.montserrat(),
-              ),
-            ),
-            textTheme: TextTheme(
-              titleLarge: GoogleFonts.montserrat(),
-              bodyLarge: GoogleFonts.montserrat(),
-              bodyMedium: GoogleFonts.montserrat(),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        controller.text = picked.toIso8601String().substring(0, 10);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
@@ -355,20 +403,14 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0, // Remove shadow for a flatter look
-        toolbarHeight: 80, // Adjust height as needed
-        title: Padding(
-          padding: const EdgeInsets.only(
-            left: 0.0,
-          ), // Adjust padding for title if necessary
-          child: Text(
-            'Modifier le patient', // Edit patient
-            style: GoogleFonts.montserrat(
-              fontSize:
-                  (isTablet ? 32 : 24) * textScaleFactor, // Adjusted font size
-              fontWeight: FontWeight.bold,
-              color: Colors.teal.shade800,
-            ),
+        elevation: 0,
+        toolbarHeight: 80,
+        title: Text(
+          'Modifier le patient',
+          style: GoogleFonts.montserrat(
+            fontSize: (isTablet ? 32 : 24) * textScaleFactor,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal.shade800,
           ),
         ),
         leading: Padding(
@@ -401,60 +443,57 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                         children: [
                           _buildTextField(
                             controller: _nameCtrl,
-                            labelText: 'Nom *', // Updated label
-                            prefixIcon: const Icon(Icons.person),
+                            labelText: 'Nom *',
                             validator: (value) {
-                              // Added validator
-                              if (value == null || value.isEmpty) {
-                                return 'Le nom est requis'; // Updated message
-                              }
+                              if (value == null || value.isEmpty)
+                                return 'Le nom est requis';
                               return null;
                             },
+                            prefixIcon: const Icon(Icons.person),
                           ),
                           _buildTextField(
                             controller: _phoneCtrl,
-                            labelText: 'Téléphone *', // Updated label
+                            labelText: 'Téléphone *',
                             keyboardType: TextInputType.phone,
-                            prefixIcon: const Icon(Icons.phone),
                             validator: (value) {
-                              // Added validator
-                              if (value == null || value.isEmpty) {
-                                return 'Le téléphone est requis'; // Updated message
-                              }
+                              if (value == null || value.isEmpty)
+                                return 'Le téléphone est requis';
                               return null;
                             },
+                            prefixIcon: const Icon(Icons.phone),
                           ),
                           _buildTextField(
                             controller: _dobCtrl,
-                            labelText: 'Date de naissance *', // Updated label
+                            labelText:
+                                'Date de naissance (optionnel)', // Updated label text
+                            hintText: 'Sélectionnez la date', // Added hint text
                             readOnly: true,
                             onTap: () => _selectDate(_dobCtrl),
+                            // validator: (value) { // REMOVED: Mandatory validation
+                            //   if (value == null || value.isEmpty)
+                            //     return 'La date de naissance est requise';
+                            //   return null;
+                            // },
                             prefixIcon: const Icon(Icons.calendar_today),
-                            validator: (value) {
-                              // Added validator
-                              if (value == null || value.isEmpty) {
-                                return 'La date de naissance est requise'; // Updated message
-                              }
-                              return null;
-                            },
                           ),
                           _buildTextField(
                             controller: _ageCtrl,
-                            labelText: 'Âge (optionnel)', // Updated label
+                            labelText: 'Âge (optionnel)',
                             keyboardType: TextInputType.number,
                             prefixIcon: const Icon(Icons.cake),
-                            // Removed validator for age as it's optional
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: DropdownButtonFormField<String>(
-                              value: _selectedGender,
+                            // --- POTENTIAL FIX: Improved DropdownButtonFormField ---
+                            child: DropdownButtonFormField<String?>(
+                              value: _selectedGender, // Can now be null
                               style: GoogleFonts.montserrat(
                                 fontSize: 18,
                                 color: Colors.black87,
                               ),
                               decoration: InputDecoration(
-                                labelText: 'Sexe (optionnel)', // Updated label
+                                labelText:
+                                    'Sexe (optionnel)', // Or 'Sexe *' if required
                                 labelStyle: GoogleFonts.montserrat(
                                   fontSize: 18,
                                 ),
@@ -486,7 +525,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(15.0),
-                                  borderSide: BorderSide(
+                                  borderSide: const BorderSide(
                                     color: Colors.teal,
                                     width: 2.5,
                                   ),
@@ -505,33 +544,48 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                                   horizontal: 20.0,
                                 ),
                               ),
-                              items: <String>['Male', 'Female'].map((
-                                String value,
-                              ) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(
-                                    value == 'Male' ? 'Homme' : 'Femme',
-                                    style: GoogleFonts.montserrat(fontSize: 18),
-                                  ),
-                                );
-                              }).toList(),
+                              items:
+                                  <String?>[
+                                    null, // Add an explicit null option for "not selected"
+                                    'Male',
+                                    'Female',
+                                  ].map((String? value) {
+                                    if (value == null) {
+                                      // Represent null as an empty selection or placeholder
+                                      return const DropdownMenuItem<String?>(
+                                        value: null,
+                                        child: Text('Sélectionner...'), // Or ''
+                                      );
+                                    }
+                                    return DropdownMenuItem<String?>(
+                                      value: value,
+                                      child: Text(
+                                        value == 'Male' ? 'Homme' : 'Femme',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                               onChanged: (String? newValue) {
                                 setState(() {
-                                  _selectedGender = newValue!;
+                                  _selectedGender = newValue; // Can now be null
                                 });
                               },
-                              // No validator — gender is optional
+                              // validator: (value) {
+                              //   if (value == null || value.isEmpty) {
+                              //     return 'Le sexe est requis.';
+                              //   }
+                              //   return null;
+                              // },
                             ),
+                            // --- END OF POTENTIAL FIX ---
                           ),
-                          // Removed other fields from this section to match AddPatientScreen order
                         ],
                       ),
-                      // Moved other fields to Démographie section to match AddPatientScreen
                       _buildSection(
                         title: 'Démographie (Facultatif)',
                         children: [
-                          // Added fields that were previously in Informations de base
                           _buildTextField(
                             controller: _emailCtrl,
                             labelText: 'Email',
@@ -541,7 +595,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                           _buildTextField(
                             controller: _addressCtrl,
                             labelText: 'Adresse',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.location_on),
@@ -562,16 +616,6 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             labelText: 'Langue principale',
                             prefixIcon: const Icon(Icons.language),
                           ),
-                          // Existing Démographie fields
-                          _buildTextField(
-                            controller:
-                                _dobCtrl, // This is now duplicated from Informations de base, but the one in Informations de base is the primary one with validator
-                            labelText:
-                                'Date de naissance (AAAA-MM-JJ)', // Different label
-                            readOnly: true,
-                            onTap: () => _selectDate(_dobCtrl),
-                            prefixIcon: const Icon(Icons.calendar_today),
-                          ),
                         ],
                       ),
                       _buildSection(
@@ -581,7 +625,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _alertsCtrl,
                             labelText: 'Alertes',
                             hintText: 'Ex: Diabète, problèmes cardiaques',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.warning),
@@ -590,7 +634,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _systemicDiseasesCtrl,
                             labelText: 'Maladies systémiques',
                             hintText: 'Ex: Hypertension, asthme',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(
@@ -601,7 +645,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _medicationsCtrl,
                             labelText: 'Médicaments',
                             hintText: 'Ex: Insuline, anti-inflammatoires',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.medication),
@@ -610,7 +654,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _allergiesCtrl,
                             labelText: 'Allergies',
                             hintText: 'Ex: Pénicilline, latex',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.do_not_disturb),
@@ -620,7 +664,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             labelText:
                                 'Chirurgies antérieures / Hospitalisations',
                             hintText: 'Ex: Appendicectomie, fracture',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.cut),
@@ -630,7 +674,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             labelText:
                                 'Facteurs de mode de vie (Tabac, Alcool, etc.)',
                             hintText: 'Ex: Fumeur, consommation modérée',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.sports_baseball),
@@ -639,7 +683,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _pregnancyLactationStatusCtrl,
                             labelText: 'Statut de grossesse/allaitement',
                             hintText: 'Ex: Enceinte (3e trimestre), allaite',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.pregnant_woman),
@@ -653,7 +697,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _chiefComplaintCtrl,
                             labelText: 'Plainte principale',
                             hintText: 'Ex: Mal de dents, carie',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.sick),
@@ -662,7 +706,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _pastDentalTreatmentsCtrl,
                             labelText: 'Traitements dentaires antérieurs',
                             hintText: 'Ex: Plombages, extractions',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.healing_outlined),
@@ -671,7 +715,7 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _previousDentalProblemsCtrl,
                             labelText: 'Problèmes dentaires antérieurs',
                             hintText: 'Ex: Gencives sensibles, abcès',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.sick_outlined),
@@ -680,23 +724,21 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
                             controller: _oralHygieneHabitsCtrl,
                             labelText: 'Habitudes d\'hygiène buccale',
                             hintText: 'Ex: Brossage 2x/jour, fil dentaire',
-                            maxLines: null, // Allow multiple lines
+                            maxLines: null,
                             keyboardType: TextInputType.multiline,
                             textInputAction: TextInputAction.newline,
                             prefixIcon: const Icon(Icons.brush),
                           ),
                           _buildTextField(
                             controller: _lastDentalVisitCtrl,
-                            labelText:
-                                'Dernière visite dentaire', // Removed date format hint to match AddPatientScreen
+                            labelText: 'Dernière visite dentaire',
                             readOnly: true,
                             onTap: () => _selectDate(_lastDentalVisitCtrl),
                             prefixIcon: const Icon(Icons.event_available),
                           ),
                           _buildTextField(
                             controller: _lastXRayCtrl,
-                            labelText:
-                                'Dernière radiographie', // Removed date format hint to match AddPatientScreen
+                            labelText: 'Dernière radiographie',
                             readOnly: true,
                             onTap: () => _selectDate(_lastXRayCtrl),
                             prefixIcon: const Icon(Icons.medical_services),
@@ -717,8 +759,35 @@ class _EditPatientScreenState extends State<EditPatientScreen> {
         onPressed: _save,
         label: 'Enregistrer les modifications',
         icon: Icons.save,
-        heroTag: 'editPatientSaveButton', // Unique heroTag
+        heroTag: 'editPatientSaveButton',
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _ageCtrl.dispose();
+    _phoneCtrl.dispose();
+    _dobCtrl.dispose();
+    _emailCtrl.dispose();
+    _addressCtrl.dispose();
+    _emergencyContactNameCtrl.dispose();
+    _emergencyContactPhoneCtrl.dispose();
+    _primaryLanguageCtrl.dispose();
+    _alertsCtrl.dispose();
+    _systemicDiseasesCtrl.dispose();
+    _medicationsCtrl.dispose();
+    _allergiesCtrl.dispose();
+    _pastSurgeriesCtrl.dispose();
+    _lifestyleFactorsCtrl.dispose();
+    _pregnancyLactationStatusCtrl.dispose();
+    _chiefComplaintCtrl.dispose();
+    _pastDentalTreatmentsCtrl.dispose();
+    _previousDentalProblemsCtrl.dispose();
+    _oralHygieneHabitsCtrl.dispose();
+    _lastDentalVisitCtrl.dispose();
+    _lastXRayCtrl.dispose();
+    super.dispose();
   }
 }

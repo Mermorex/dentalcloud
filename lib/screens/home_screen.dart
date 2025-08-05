@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // --- MODIFIED _onDisconnect ---
+  // --- FIXED _onDisconnect ---
   // Ensure provider state is cleared before sign out
   void _onDisconnect() async {
     try {
@@ -43,9 +43,10 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         listen: false,
       );
-      // Clear the PatientProvider's cabinet code and data FIRST
-      // Pass null to the existing method which should clear data
-      await patientProvider.setCurrentCabinetCode(null);
+      // Clear the PatientProvider's cabinet ID and data FIRST
+      // Pass null to the updated method which should clear data
+      // --- CHANGED setCurrentCabinetCode -> setCurrentCabinetId ---
+      await patientProvider.setCurrentCabinetId(null);
       // Sign out from Supabase
       await Supabase.instance.client.auth.signOut();
       if (mounted) {
@@ -79,30 +80,30 @@ class _HomeScreenState extends State<HomeScreen> {
       const PatientsList(),
     ];
     // --- END MODIFIED INIT STATE ---
-
-    // Handle data loading and cabinet code check on screen init
+    // Handle data loading and cabinet ID check on screen init
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       print("HomeScreen: addPostFrameCallback triggered.");
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
       );
-      // Scenario 1: Cabinet code is already set in the provider (e.g., normal navigation after login setup)
-      if (patientProvider.currentCabinetCode != null) {
+      // Scenario 1: Cabinet ID is already set in the provider (e.g., normal navigation after login setup)
+      // --- CHANGED currentCabinetCode -> currentCabinetId ---
+      if (patientProvider.currentCabinetId != null) {
         print(
-          "HomeScreen: Cabinet code already present in provider. Loading data...",
+          "HomeScreen: Cabinet ID already present in provider. Loading data...",
         );
         // Data might already be loaded, but trigger a reload to be sure
         await patientProvider.loadPatients();
         await patientProvider.loadAppointments();
         print(
-          "HomeScreen: Data loaded using existing cabinet code from provider.",
+          "HomeScreen: Data loaded using existing cabinet ID from provider.",
         );
-        return; // Important: Exit if code is already set
+        return; // Important: Exit if ID is already set
       }
-      // Scenario 2: Cabinet code is NOT set (e.g., after a browser refresh or deep link)
+      // Scenario 2: Cabinet ID is NOT set (e.g., after a browser refresh or deep link)
       print(
-        "HomeScreen: No cabinet code found in provider. Checking user session...",
+        "HomeScreen: No cabinet ID found in provider. Checking user session...",
       );
       try {
         // Use currentSession - this is the correct way in Supabase Flutter SDK
@@ -110,39 +111,45 @@ class _HomeScreenState extends State<HomeScreen> {
         if (session != null) {
           // User is logged in according to Supabase.
           print(
-            "HomeScreen: Valid user session found. Fetching cabinet code from database...",
+            "HomeScreen: Valid user session found. Fetching cabinet ID from database...",
           );
           try {
-            // --- FETCH CABINET CODE FROM DATABASE (cabinet_members table) ---
+            // --- FETCH CABINET ID FROM DATABASE (cabinet_members table) ---
             // This is the standard way based on your auth_screen.dart logic
+            // --- CHANGED column name from cabinet_code to cabinet_id ---
             final memberResponse = await Supabase.instance.client
                 .from('cabinet_members')
-                .select('cabinet_code')
+                .select('cabinet_id') // <-- CHANGED THIS ---
                 .eq('user_id', session.user.id)
                 .eq('is_active', true)
                 .limit(1); // Assuming one primary cabinet for simplicity
             if (memberResponse.isNotEmpty) {
-              String? cabinetCode =
-                  memberResponse[0]['cabinet_code'] as String?;
-              if (cabinetCode != null && cabinetCode.isNotEmpty) {
+              // --- CHANGED type and variable name from cabinetCode to cabinetId ---
+              String? cabinetId =
+                  memberResponse[0]['cabinet_id']
+                      as String?; // <-- CHANGED THIS ---
+              if (cabinetId != null && cabinetId.isNotEmpty) {
                 print(
-                  "HomeScreen: Fetched cabinet code '$cabinetCode'. Setting in provider...",
+                  "HomeScreen: Fetched cabinet ID '$cabinetId'. Setting in provider...",
                 );
-                // Setting the cabinet code in the provider should trigger data loading if needed,
+                // Setting the cabinet ID in the provider should trigger data loading if needed,
                 // or we can load explicitly afterwards.
-                await patientProvider.setCurrentCabinetCode(cabinetCode);
+                // --- CHANGED setCurrentCabinetCode -> setCurrentCabinetId ---
+                await patientProvider.setCurrentCabinetId(
+                  cabinetId,
+                ); // <-- CHANGED THIS ---
                 print(
-                  "HomeScreen: Cabinet code set in provider. Loading data...",
+                  "HomeScreen: Cabinet ID set in provider. Loading data...",
                 );
                 await patientProvider.loadPatients();
                 await patientProvider.loadAppointments();
                 print(
-                  "HomeScreen: Data loaded successfully after fetching cabinet code.",
+                  "HomeScreen: Data loaded successfully after fetching cabinet ID.",
                 );
               } else {
-                // Unexpected: Record found but code is null/empty
+                // Unexpected: Record found but ID is null/empty
                 print(
-                  'HomeScreen Error: Cabinet code found in record but is null/empty for user ${session.user.id}.',
+                  'HomeScreen Error: Cabinet ID found in record but is null/empty for user ${session.user.id}.',
                 );
                 await _forceLogoutDueToConfigError();
               }
@@ -154,9 +161,9 @@ class _HomeScreenState extends State<HomeScreen> {
               await _forceLogoutDueToConfigError();
             }
           } catch (fetchError) {
-            // Error occurred while trying to fetch the cabinet code from DB.
+            // Error occurred while trying to fetch the cabinet ID from DB.
             print(
-              'HomeScreen Error: Failed to fetch cabinet code from DB: $fetchError',
+              'HomeScreen Error: Failed to fetch cabinet ID from DB: $fetchError',
             );
             await _forceLogoutDueToConfigError();
           }
@@ -180,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // --- END OF MODIFIED INIT STATE ---
   }
 
-  // --- NEW HELPER METHOD ---
+  // --- FIXED HELPER METHOD ---
   // Handles forced logout and navigation due to critical configuration errors
   Future<void> _forceLogoutDueToConfigError() async {
     print("HomeScreen: Initiating forced logout due to configuration error.");
@@ -189,7 +196,8 @@ class _HomeScreenState extends State<HomeScreen> {
       listen: false,
     );
     // Ensure provider is clean first
-    await patientProvider.setCurrentCabinetCode(null);
+    // --- CHANGED setCurrentCabinetCode -> setCurrentCabinetId ---
+    await patientProvider.setCurrentCabinetId(null);
     // Attempt Supabase sign out (might fail if session was invalid)
     try {
       await Supabase.instance.client.auth.signOut();
@@ -204,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.of(context).pushReplacementNamed('/login');
     }
   }
-  // --- END OF NEW HELPER METHOD ---
+  // --- END OF FIXED HELPER METHOD ---
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,6 @@
 // lib/models/patient.dart
-import 'package:uuid/uuid.dart';
-
 class Patient {
-  final String id;
+  final String? id;
   final String name;
   final int age;
   final String gender;
@@ -25,12 +23,12 @@ class Patient {
   final String? previousDentalProblems;
   final String? oralHygieneHabits;
   final String? lastDentalVisit;
-  final String? lastXRay;
-  final int? visitCount;
-  final String? cabinetCode; // CHANGED: clientId -> cabinetCode
+  final String? lastXray;
+  final int visitCount;
+  final String? cabinetId; // ✅ Now cabinetId (UUID), not cabinetCode
 
   Patient({
-    String? id,
+    this.id,
     required this.name,
     required this.age,
     required this.gender,
@@ -53,14 +51,17 @@ class Patient {
     this.previousDentalProblems,
     this.oralHygieneHabits,
     this.lastDentalVisit,
-    this.lastXRay,
-    this.visitCount,
-    this.cabinetCode, // CHANGED: clientId -> cabinetCode
-  }) : id = id ?? const Uuid().v4();
+    this.lastXray,
+    this.visitCount = 0,
+    this.cabinetId, // ✅
+  });
 
+  // Convert to Map for database insertion
+  // ✅ FIXED: Conditionally include 'id' only if it's not null
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final Map<String, dynamic> data = {
+      // Add non-nullable fields and nullable fields that should always be included
+      // Note: 'id' is deliberately omitted if null
       'name': name,
       'age': age,
       'gender': gender,
@@ -83,45 +84,54 @@ class Patient {
       'previous_dental_problems': previousDentalProblems,
       'oral_hygiene_habits': oralHygieneHabits,
       'last_dental_visit': lastDentalVisit,
-      'last_xray': lastXRay,
+      'last_xray': lastXray,
       'visit_count': visitCount,
-      'cabinet_code': cabinetCode, // CHANGED: client_id -> cabinet_code
+      'cabinet_id': cabinetId, // ✅ DB column is cabinet_id
     };
-  }
 
+    // Conditionally add fields that might be null and should be omitted if null
+    // Crucially, omit 'id' if it's null
+    if (id != null) {
+      data['id'] = id;
+    }
+
+    return data;
+  }
+  // ✅ END OF FIX
+
+  // Create from Map (from DB)
   factory Patient.fromMap(Map<String, dynamic> map) {
     return Patient(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      age: map['age'] as int,
-      gender: map['gender'] as String,
-      phone: map['phone'] as String,
-      dateOfBirth: map['date_of_birth'] as String?,
-      email: map['email'] as String?,
-      address: map['address'] as String?,
-      emergencyContactName: map['emergency_contact_name'] as String?,
-      emergencyContactPhone: map['emergency_contact_phone'] as String?,
-      primaryLanguage: map['primary_language'] as String?,
-      alerts: map['alerts'] as String?,
-      systemicDiseases: map['systemic_diseases'] as String?,
-      medications: map['medications'] as String?,
-      allergies: map['allergies'] as String?,
-      pastSurgeriesHospitalizations:
-          map['past_surgeries_hospitalizations'] as String?,
-      lifestyleFactors: map['lifestyle_factors'] as String?,
-      pregnancyLactationStatus: map['pregnancy_lactation_status'] as String?,
-      chiefComplaint: map['chief_complaint'] as String?,
-      pastDentalTreatments: map['past_dental_treatments'] as String?,
-      previousDentalProblems: map['previous_dental_problems'] as String?,
-      oralHygieneHabits: map['oral_hygiene_habits'] as String?,
-      lastDentalVisit: map['last_dental_visit'] as String?,
-      lastXRay: map['last_xray'] as String?,
-      visitCount: map['visit_count'] as int?,
-      cabinetCode:
-          map['cabinet_code'] as String?, // CHANGED: client_id -> cabinet_code
+      id: map['id'],
+      name: map['name'],
+      age: map['age'],
+      gender: map['gender'],
+      phone: map['phone'],
+      dateOfBirth: map['date_of_birth'],
+      email: map['email'],
+      address: map['address'],
+      emergencyContactName: map['emergency_contact_name'],
+      emergencyContactPhone: map['emergency_contact_phone'],
+      primaryLanguage: map['primary_language'],
+      alerts: map['alerts'],
+      systemicDiseases: map['systemic_diseases'],
+      medications: map['medications'],
+      allergies: map['allergies'],
+      pastSurgeriesHospitalizations: map['past_surgeries_hospitalizations'],
+      lifestyleFactors: map['lifestyle_factors'],
+      pregnancyLactationStatus: map['pregnancy_lactation_status'],
+      chiefComplaint: map['chief_complaint'],
+      pastDentalTreatments: map['past_dental_treatments'],
+      previousDentalProblems: map['previous_dental_problems'],
+      oralHygieneHabits: map['oral_hygiene_habits'],
+      lastDentalVisit: map['last_dental_visit'],
+      lastXray: map['last_xray'],
+      visitCount: map['visit_count'] ?? 0,
+      cabinetId: map['cabinet_id'], // ✅
     );
   }
 
+  // ✅ Updated copyWith to use cabinetId
   Patient copyWith({
     String? id,
     String? name,
@@ -146,9 +156,9 @@ class Patient {
     String? previousDentalProblems,
     String? oralHygieneHabits,
     String? lastDentalVisit,
-    String? lastXRay,
+    String? lastXray,
     int? visitCount,
-    String? cabinetCode, // CHANGED: clientId -> cabinetCode
+    String? cabinetId, // ✅ Parameter name corrected
   }) {
     return Patient(
       id: id ?? this.id,
@@ -178,10 +188,9 @@ class Patient {
           previousDentalProblems ?? this.previousDentalProblems,
       oralHygieneHabits: oralHygieneHabits ?? this.oralHygieneHabits,
       lastDentalVisit: lastDentalVisit ?? this.lastDentalVisit,
-      lastXRay: lastXRay ?? this.lastXRay,
+      lastXray: lastXray ?? this.lastXray,
       visitCount: visitCount ?? this.visitCount,
-      cabinetCode:
-          cabinetCode ?? this.cabinetCode, // CHANGED: clientId -> cabinetCode
+      cabinetId: cabinetId ?? this.cabinetId, // ✅
     );
   }
 }

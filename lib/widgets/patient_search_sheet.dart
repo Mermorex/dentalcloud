@@ -2,12 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/patient.dart'; // Make sure your Patient model is imported
+import '../models/patient.dart';
 import '../providers/patient_provider.dart';
 
 class PatientSearchSheet extends StatefulWidget {
-  // isDialog is no longer strictly necessary since it's always used in a Dialog now,
-  // but keeping it doesn't harm and could be useful for future conditional UI.
   final bool isDialog;
   const PatientSearchSheet({super.key, this.isDialog = false});
 
@@ -22,7 +20,6 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
   @override
   void initState() {
     super.initState();
-    // Initialize with all patients
     _filteredPatients = Provider.of<PatientProvider>(
       context,
       listen: false,
@@ -54,14 +51,14 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
     super.dispose();
   }
 
-  // Reused from AddAppointmentScreen for consistent design
+  // --- Updated _buildSectionHeader for modern look ---
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24.0, bottom: 12.0),
+      padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
       child: Text(
         title,
         style: GoogleFonts.montserrat(
-          fontSize: 24,
+          fontSize: 22, // Slightly smaller
           fontWeight: FontWeight.bold,
           color: Colors.teal.shade800,
         ),
@@ -69,7 +66,7 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
     );
   }
 
-  // Reused and adapted from AddAppointmentScreen for consistent design
+  // --- Updated _buildTextField for modern look and consistency ---
   Widget _buildTextField({
     required TextEditingController controller,
     required String labelText,
@@ -77,7 +74,7 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
     int? maxLines = 1,
     String? Function(String?)? validator,
     VoidCallback? onTap,
-    ValueChanged<String>? onChanged, // Added onChanged parameter
+    ValueChanged<String>? onChanged,
     bool readOnly = false,
     Widget? suffixIcon,
     Widget? prefixIcon,
@@ -89,45 +86,53 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
       padding: padding!,
       child: TextFormField(
         controller: controller,
-        style: GoogleFonts.montserrat(fontSize: 18),
+        style: GoogleFonts.montserrat(fontSize: 16), // Slightly smaller font
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle: GoogleFonts.montserrat(fontSize: 18),
+          labelStyle: GoogleFonts.montserrat(fontSize: 16),
           hintText: hintText,
           hintStyle: GoogleFonts.montserrat(
             color: Colors.grey.shade500,
-            fontSize: 18,
+            fontSize: 16,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+            borderRadius: BorderRadius.circular(
+              12.0,
+            ), // Slightly smaller radius
+            borderSide: BorderSide(
+              color: Colors.grey.shade300,
+              width: 1.0,
+            ), // Thinner border
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            borderSide: const BorderSide(color: Colors.teal, width: 2.5),
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(
+              color: Colors.teal,
+              width: 2.0,
+            ), // Thinner focused border
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide(color: Colors.grey.shade300, width: 1.0),
           ),
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
-            vertical: 20.0,
-            horizontal: 20.0,
+            vertical: 18.0, // Slightly less padding
+            horizontal: 16.0,
           ),
           suffixIcon: suffixIcon,
           prefixIcon: prefixIcon != null
               ? Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   child: SizedBox(
-                    width: 28.0,
-                    height: 28.0,
+                    width: 24.0, // Slightly smaller icon
+                    height: 24.0,
                     child: Align(
                       alignment: Alignment.center,
                       child: IconTheme(
                         data: IconThemeData(
-                          size: 28.0,
+                          size: 24.0,
                           color: Colors.teal.shade700,
                         ),
                         child: prefixIcon,
@@ -136,13 +141,14 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
                   ),
                 )
               : null,
+          // Error styling (if needed)
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            borderSide: const BorderSide(color: Colors.red, width: 2.5),
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: Colors.red, width: 2.0),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            borderSide: const BorderSide(color: Colors.red, width: 2.5),
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: Colors.red, width: 2.0),
           ),
           errorStyle: GoogleFonts.montserrat(
             color: Colors.red.shade700,
@@ -153,14 +159,14 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
         maxLines: maxLines,
         validator: validator,
         onTap: onTap,
-        onChanged: onChanged, // Passed the onChanged parameter to TextFormField
+        onChanged: onChanged,
         readOnly: readOnly,
         textInputAction: textInputAction,
       ),
     );
   }
 
-  // Modified _buildSection to include card-like styling, consistent with AddAppointmentScreen
+  // --- Updated _buildSection for modern card look with shadow ---
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -170,19 +176,19 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
       children: [
         _buildSectionHeader(title),
         Container(
-          margin: const EdgeInsets.only(bottom: 20.0), // Space between sections
+          margin: const EdgeInsets.only(bottom: 20.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16), // Slightly smaller radius
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.05), // Softer shadow
+                blurRadius: 8, // Less blur
+                offset: const Offset(0, 2), // Smaller offset
               ),
             ],
           ),
-          padding: const EdgeInsets.all(20.0), // Inner padding for the card
+          padding: const EdgeInsets.all(16.0), // Slightly less padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -191,6 +197,7 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
       ],
     );
   }
+  // --- END Updates ---
 
   @override
   Widget build(BuildContext context) {
@@ -198,49 +205,62 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
 
     return Container(
-      width: isTablet ? 600 : MediaQuery.of(context).size.width * 0.9,
-      height: isTablet ? 600 : MediaQuery.of(context).size.height * 0.7,
+      width: isTablet
+          ? 600
+          : MediaQuery.of(context).size.width * 0.95, // Wider on mobile
+      height: isTablet
+          ? 600
+          : MediaQuery.of(context).size.height * 0.75, // Taller on mobile
       decoration: BoxDecoration(
-        color: Colors.grey.shade50, // Consistent background color
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.grey.shade50,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(25),
+        ), // More rounded top corners
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // --- Updated AppBar for modern look ---
           AppBar(
             backgroundColor: Colors.white,
-            elevation: 0,
-            toolbarHeight: 80,
+            elevation: 0, // No shadow
+            toolbarHeight: 70, // Slightly shorter
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(25),
+              ), // Match container radius
             ),
-            title: Padding(
-              padding: const EdgeInsets.only(left: 0.0),
-              child: Text(
-                'Sélectionner un patient',
-                style: GoogleFonts.montserrat(
-                  fontSize: (isTablet ? 32 : 24) * textScaleFactor,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal.shade800,
-                ),
+            title: Text(
+              'Sélectionner un patient',
+              style: GoogleFonts.montserrat(
+                fontSize:
+                    (isTablet ? 28 : 22) *
+                    textScaleFactor, // Adjusted font size
+                fontWeight: FontWeight.bold,
+                color: Colors.teal.shade800,
               ),
             ),
+            centerTitle: true, // Center the title
             leading: Padding(
               padding: const EdgeInsets.only(left: 16.0),
               child: IconButton(
                 icon: Icon(
                   Icons.close,
                   color: Colors.teal.shade600,
-                  size: isTablet ? 32 : 28,
+                  size: isTablet ? 30 : 26, // Adjusted icon size
                 ),
                 onPressed: () => Navigator.of(context).pop(),
                 tooltip: 'Fermer',
               ),
             ),
           ),
+          // --- END Updated AppBar ---
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 10.0,
+              ), // Adjusted padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -250,62 +270,106 @@ class _PatientSearchSheetState extends State<PatientSearchSheet> {
                       _buildTextField(
                         controller: _searchCtrl,
                         labelText: 'Nom du patient',
+                        hintText: 'Commencez à taper un nom...', // Added hint
                         prefixIcon: const Icon(Icons.search),
                         onChanged: _filterPatients,
                         padding: const EdgeInsets.only(bottom: 0.0),
                       ),
                     ],
                   ),
-                  _filteredPatients.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20.0),
-                            child: Text(
+                  if (_filteredPatients.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 40.0,
+                        ), // More vertical space
+                        child: Column(
+                          // Use Column for icon + text
+                          children: [
+                            Icon(
+                              Icons
+                                  .person_search_outlined, // More relevant icon
+                              size: 60, // Large icon
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
                               'Aucun patient trouvé.',
                               style: GoogleFonts.montserrat(
                                 fontSize: 18,
+                                fontWeight: FontWeight.w500, // Slightly bolder
                                 color: Colors.grey.shade600,
                               ),
                             ),
-                          ),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _filteredPatients.length,
-                          itemBuilder: (context, index) {
-                            final patient = _filteredPatients[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 0.0,
-                                vertical: 8.0,
-                              ),
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.teal.shade100,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.teal.shade700,
-                                  ),
-                                ),
-                                title: Text(
-                                  patient.name,
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context, patient);
-                                },
-                              ),
-                            );
-                          },
+                          ],
                         ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _filteredPatients.length,
+                      itemBuilder: (context, index) {
+                        final patient = _filteredPatients[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 0.0,
+                            vertical: 6.0, // Reduced vertical margin
+                          ),
+                          elevation: 1, // Lower elevation
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              12.0,
+                            ), // Consistent radius
+                          ),
+                          child: ListTile(
+                            // --- Modernized ListTile ---
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 12.0,
+                            ), // Adjusted padding
+                            leading: CircleAvatar(
+                              radius: 22, // Slightly smaller avatar
+                              backgroundColor:
+                                  Colors.teal.shade50, // Lighter background
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.teal.shade700,
+                                size: 24, // Adjusted icon size
+                              ),
+                            ),
+                            title: Text(
+                              patient.name,
+                              style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.w600, // Slightly bolder
+                                fontSize: 17, // Slightly larger
+                                color: Colors.teal.shade900, // Darker text
+                              ),
+                              overflow:
+                                  TextOverflow.ellipsis, // Handle long names
+                            ),
+                            // Optional: Add patient phone or other info
+                            // subtitle: Text(
+                            //   patient.phone ?? 'Pas de téléphone',
+                            //   style: GoogleFonts.montserrat(
+                            //     fontSize: 14,
+                            //     color: Colors.grey.shade600,
+                            //   ),
+                            // ),
+                            trailing: Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.teal.shade600,
+                              size: 18, // Smaller trailing icon
+                            ),
+                            onTap: () {
+                              Navigator.pop(context, patient);
+                            },
+                            // --- END Modernized ListTile ---
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

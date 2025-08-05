@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'dart:async';
 import 'dart:html' as html; // Import for web URL manipulation
+import 'package:dental/providers/subscription_provider.dart';
 import 'package:flutter/foundation.dart'; // Import for kIsWeb
 import 'package:dental/models/patient.dart';
 import 'package:dental/providers/patient_provider.dart';

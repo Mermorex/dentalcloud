@@ -1224,6 +1224,9 @@ file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/src/typed_queue.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/typed_buffers.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0/lib/typed_data.dart
+file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links_platform_interface-1.0.0/lib/src/method_channel_uni_links.dart
+file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links_platform_interface-1.0.0/lib/uni_links_platform_interface.dart
+file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/uni_links_web-0.1.0/lib/uni_links_web.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/legacy_api.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/type_conversion.dart
 file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.3.2/lib/src/types.dart
@@ -1604,6 +1607,7 @@ file:///D:/detiste%20app/dental%20Cloud/lib/models/appointment.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/models/patient.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/models/visit.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/providers/patient_provider.dart
+file:///D:/detiste%20app/dental%20Cloud/lib/providers/subscription_provider.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/add_appointment_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/add_patient_screen.dart
 file:///D:/detiste%20app/dental%20Cloud/lib/screens/add_visit_screen.dart

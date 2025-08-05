@@ -37,7 +37,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
   final _oralHygieneHabitsCtrl = TextEditingController();
   final _lastDentalVisitCtrl = TextEditingController();
   final _lastXRayCtrl = TextEditingController();
-
   String? _gender;
   bool isLimitReached = false;
 
@@ -67,7 +66,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         ? DateTime.tryParse(controller.text)
         : null;
     initialDate ??= DateTime.now();
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -90,7 +88,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         );
       },
     );
-
     if (picked != null) {
       final formattedDate = picked.toIso8601String().substring(0, 10);
       setState(() {
@@ -109,7 +106,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
       final int? age = _ageCtrl.text.isNotEmpty
           ? int.tryParse(_ageCtrl.text)
           : null;
@@ -126,7 +122,11 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         return;
       }
 
+      // --- FIXED: Removed cabinetCode from Patient constructor ---
+      // The PatientProvider and DatabaseHelper will handle associating the patient
+      // with the current cabinet ID.
       final newPatient = Patient(
+        // id: '', // Let the database generate the ID
         name: _nameCtrl.text,
         age: age ?? 0, // Backend logic may allow 0, or you can omit default
         gender:
@@ -177,16 +177,17 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         lastDentalVisit: _lastDentalVisitCtrl.text.isEmpty
             ? null
             : _lastDentalVisitCtrl.text,
-        lastXRay: _lastXRayCtrl.text.isEmpty ? null : _lastXRayCtrl.text,
+        lastXray: _lastXRayCtrl.text.isEmpty
+            ? null
+            : _lastXRayCtrl.text, // <-- Corrected line
         visitCount: 0, // New patient
-        cabinetCode: '', // Set appropriately if needed
+        // cabinetCode: '', // <-- REMOVED: This is handled by PatientProvider/DatabaseHelper
+        // --- END OF FIX ---
       );
-
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
       );
-
       if (isLimitReached) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -199,7 +200,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         );
         return;
       }
-
       try {
         final success = await patientProvider.addPatient(newPatient);
         if (mounted) {
@@ -363,7 +363,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -430,14 +429,16 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           ),
                           _buildTextField(
                             controller: _dobCtrl,
-                            labelText: 'Date de naissance *',
+                            labelText:
+                                'Date de naissance (optionnel)', // Updated label text
+                            hintText: 'Sélectionnez la date', // Added hint text
                             readOnly: true,
                             onTap: () => _selectDate(_dobCtrl),
-                            validator: (value) {
-                              if (value == null || value.isEmpty)
-                                return 'La date de naissance est requise';
-                              return null;
-                            },
+                            // validator: (value) { // REMOVED: Mandatory validation
+                            //   if (value == null || value.isEmpty)
+                            //     return 'La date de naissance est requise';
+                            //   return null;
+                            // },
                             prefixIcon: const Icon(Icons.calendar_today),
                           ),
                           _buildTextField(
@@ -525,7 +526,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           ),
                         ],
                       ),
-
                       // --- Démographie (Facultatif) ---
                       _buildSection(
                         title: 'Démographie (Facultatif)',
@@ -562,7 +562,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           ),
                         ],
                       ),
-
                       // --- Antécédents médicaux (Facultatif) ---
                       _buildSection(
                         title: 'Antécédents médicaux (Facultatif)',
@@ -636,7 +635,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           ),
                         ],
                       ),
-
                       // --- Antécédents dentaires (Facultatif) ---
                       _buildSection(
                         title: 'Antécédents dentaires (Facultatif)',
@@ -693,7 +691,6 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 120),
                     ],
                   ),

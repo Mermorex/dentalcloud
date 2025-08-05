@@ -12,7 +12,6 @@ class PdfHelper {
     List<Visit> visits,
   ) async {
     final pdf = pw.Document();
-
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.copyWith(
@@ -66,7 +65,9 @@ class PdfHelper {
             ['Problèmes antérieurs:', patient.previousDentalProblems ?? 'N/A'],
             ['Hygiène buccale:', patient.oralHygieneHabits ?? 'N/A'],
             ['Dernière visite dentaire:', patient.lastDentalVisit ?? 'N/A'],
-            ['Dernière radio:', patient.lastXRay ?? 'N/A'],
+            // --- FIXED: Corrected typo from 'lastXRay' to 'lastXray' ---
+            ['Dernière radio:', patient.lastXray ?? 'N/A'],
+            // --- END OF FIX ---
           ]),
           pw.SizedBox(height: 15),
           if (visits.isNotEmpty) ...[
@@ -78,22 +79,17 @@ class PdfHelper {
         ],
       ),
     );
-
     // Generate PDF bytes
     final Uint8List pdfBytes = await pdf.save();
-
     // Trigger download in web browser
     final String filename = '${patient.name}_Rapport_Patient.pdf';
-
     // Create a Blob from the PDF bytes
     final blob = html.Blob([pdfBytes], 'application/pdf');
     final url = html.Url.createObjectUrlFromBlob(blob);
-
     // Create a temporary anchor element and trigger the download
     final anchor = html.AnchorElement(href: url)
       ..setAttribute('download', filename)
       ..click();
-
     // Clean up the URL
     html.Url.revokeObjectUrl(url);
   }
@@ -168,10 +164,10 @@ class PdfHelper {
   }
 
   static pw.Widget _buildVisitCard(Visit visit) {
-    final double totalAmount = visit.totalAmount ?? 0.0;
-    final double amountPaid = visit.amountPaid ?? 0.0;
-    final double remainingToPay = totalAmount - amountPaid;
-
+    // Note: remainingToPay was calculated but not used in the original code.
+    // final double totalAmount = visit.totalAmount ?? 0.0;
+    // final double amountPaid = visit.amountPaid ?? 0.0;
+    // final double remainingToPay = totalAmount - amountPaid;
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 10),
       padding: const pw.EdgeInsets.all(10),
