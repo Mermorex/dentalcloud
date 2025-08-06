@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Image.asset(
-                            'assets/images/tooth_logo.png',
+                            'assets/images/dentypro_logo.png',
                             height: 60,
                           ),
                         ),

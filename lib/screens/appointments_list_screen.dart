@@ -1,7 +1,7 @@
 // lib/screens/appointments_list_screen.dart
 import 'package:dental/models/appointment.dart';
-import 'package:dental/models/patient.dart'; // Import Patient model
-import 'package:dental/screens/patient_detail_screen.dart'; // Import PatientDetailScreen
+import 'package:dental/screens/patient_detail_screen.dart';
+import 'package:dental/widgets/main_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/patient_provider.dart';
@@ -9,7 +9,6 @@ import 'edit_appointment_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'add_appointment_screen.dart'; // Import AddAppointmentScreen
-import 'package:dental/widgets/main_button.dart'; // Assuming you have a MainButton widget
 
 // This is the SINGLE, GLOBAL declaration of the GlobalKey that both HomeScreen and AppointmentsListScreen will use.
 final GlobalKey<_AppointmentsListScreenState> appointmentsListScreenKey =

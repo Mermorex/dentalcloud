@@ -19,20 +19,18 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
   late TextEditingController _notesCtrl;
   late TextEditingController _dateCtrl;
   late TextEditingController _timeCtrl;
-
   late String _selectedPatientId; // Changed from int to String
   late String _selectedStatus;
-
   final List<String> _statusOptions = [
     'Scheduled',
-    'Completed',
+    'Completed', // Note: Check consistency with AddAppointmentScreen
     'Cancelled',
     'No Show',
   ];
-
   final Map<String, String> _statusTranslations = {
     'Scheduled': 'Programmé',
-    'Completed': 'Reporté', // Corrected translation
+    'Completed':
+        'Reporté', // Note: Check consistency with AddAppointmentScreen ('Reported' vs 'Completed')
     'Cancelled': 'Annulé',
     'No Show': 'Absent',
   };
@@ -99,6 +97,7 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
       final parts = _timeCtrl.text.split(':');
       int hour = int.parse(parts[0].trim());
       int minute = int.parse(parts[1].split(' ')[0].trim());
+      // Simple 24-hour check based on common format, adjust if needed
       if (_timeCtrl.text.toUpperCase().contains('PM') && hour < 12) {
         hour += 12;
       } else if (_timeCtrl.text.toUpperCase().contains('AM') && hour == 12) {
@@ -111,7 +110,6 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
         'Error parsing time for appointment ${widget.appointment.id}: $e',
       );
     }
-
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: initialTime,
@@ -147,7 +145,23 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
   }
 
   Future<void> _saveChanges() async {
+    // <-- Made the method async
     if (_formKey.currentState!.validate()) {
+      // Show "Saving..." SnackBar
+      if (mounted) {
+        // <-- Check mounted before using context
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sauvegarde du rendez-vous...',
+              style: GoogleFonts.montserrat(color: Colors.white),
+            ),
+            backgroundColor: Colors.teal,
+            duration: const Duration(seconds: 1), // Optional: shorter duration
+          ),
+        );
+      }
+
       final updatedAppointment = Appointment(
         id: widget.appointment.id,
         patientId: _selectedPatientId, // Now correctly passed as String
@@ -157,12 +171,37 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
         status: _selectedStatus,
       );
 
+      // Perform the update operation
       await Provider.of<PatientProvider>(
         context,
         listen: false,
       ).updateAppointment(updatedAppointment);
-      if (!mounted) return;
-      Navigator.pop(context);
+
+      // Show success SnackBar and wait for it to close before popping
+      if (mounted) {
+        // <-- Check mounted before using context
+        // Await the completion of the SnackBar before popping the screen
+        await ScaffoldMessenger.of(context)
+            .showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Rendez-vous modifié avec succès !', // Updated message
+                  style: GoogleFonts.montserrat(color: Colors.white),
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            )
+            .closed; // This ensures the Future returns when the SnackBar is dismissed.
+
+        // Now it's safe to pop the screen as the SnackBar operation has completed.
+        if (mounted) {
+          // <-- Re-check mounted status after the async gap
+          Navigator.pop(
+            context,
+          ); // Use pop instead of of(context).pop() for brevity
+        }
+      }
     }
   }
 
@@ -308,7 +347,6 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
     final patients = patientProvider.patients;
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50, // Consistent background color
       appBar: AppBar(
@@ -585,7 +623,7 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _saveChanges,
+        onPressed: _saveChanges, // <-- Use the updated _saveChanges method
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(

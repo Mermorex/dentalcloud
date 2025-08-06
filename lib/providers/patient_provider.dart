@@ -176,6 +176,24 @@ class PatientProvider with ChangeNotifier {
     }
   }
 
+  // --- NEW METHOD: getAllVisits ---
+  /// Fetches all visits for the currently selected cabinet.
+  /// Returns an empty list if no cabinet is selected or on error.
+  Future<List<Visit>> getAllVisits() async {
+    final cabinetId = _currentCabinetId; // Get the current cabinet ID
+    if (cabinetId == null) {
+      print('Error: Cabinet ID not found. Cannot get all visits.');
+      return []; // Return empty list if no cabinet ID
+    }
+    try {
+      // Call the DatabaseHelper method to get all visits for the cabinet
+      return await DatabaseHelper.instance.getAllVisitsForCabinet(cabinetId);
+    } catch (e) {
+      print('Failed to get all visits: $e');
+      return []; // Return empty list on error
+    }
+  }
+
   Future<void> addVisit(Visit visit) async {
     // CHANGED: cabinetCode -> cabinetId
     final cabinetId = _currentCabinetId;

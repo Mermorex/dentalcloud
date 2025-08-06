@@ -303,6 +303,34 @@ class DatabaseHelper {
     }
   }
 
+  // --- NEW METHOD: getAllVisitsForCabinet ---
+  /// Retrieves all visits for a specific cabinet.
+  Future<List<Visit>> getAllVisitsForCabinet(String cabinetId) async {
+    try {
+      final response = await _supabase
+          .from('visits')
+          .select('*') // Select all visit fields
+          .eq('cabinet_id', cabinetId) // Filter by cabinet ID
+          .order(
+            'date',
+            ascending: false,
+          ) // Order by date descending (newest first)
+          .order('time', ascending: false); // Then order by time descending
+
+      // Map response to Visit objects
+      return response.map((e) {
+        // Optional: Add a check for null e['id'] if Visit.fromMap requires it
+        // if (e['id'] == null) { print("Warning: Visit data with null id: $e"); }
+        return Visit.fromMap(e);
+      }).toList();
+    } catch (e) {
+      print(
+        'Error getting all visits for cabinet (Cabinet ID: $cabinetId): $e',
+      );
+      rethrow; // Let the caller handle the error
+    }
+  }
+
   /* ---------- CRUD for Appointments ---------- */
 
   /// Inserts a new appointment.

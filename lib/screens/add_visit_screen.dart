@@ -6,7 +6,8 @@ import 'package:provider/provider.dart';
 import '../models/visit.dart';
 import '../providers/patient_provider.dart';
 import '../widgets/main_button.dart';
-import '../models/appointment.dart'; // Import the Appointment model
+import '../models/appointment.dart';
+import '../widgets/visit_date_time_info.dart'; // ✅ Import the new widget
 
 class AddVisitScreen extends StatefulWidget {
   final String patientId;
@@ -25,8 +26,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
   final _treatmentCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _nextVisitDateCtrl = TextEditingController();
-  final _nextVisitTimeCtrl =
-      TextEditingController(); // Added for next visit time
+  final _nextVisitTimeCtrl = TextEditingController();
   bool _isPaid = false;
   final _amountPaidCtrl = TextEditingController();
   final _totalAmountCtrl = TextEditingController();
@@ -34,18 +34,14 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
   @override
   void initState() {
     super.initState();
-    // Set initial date automatically
     _dateCtrl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Set initial time automatically
-    // Using a post-frame callback ensures the context is fully built for TimeOfDay formatting
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // Check if the widget is still mounted
         _timeCtrl.text = TimeOfDay.now().format(context);
       }
     });
@@ -60,20 +56,49 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     _treatmentCtrl.dispose();
     _notesCtrl.dispose();
     _nextVisitDateCtrl.dispose();
-    _nextVisitTimeCtrl.dispose(); // Dispose the new controller
+    _nextVisitTimeCtrl.dispose();
     _amountPaidCtrl.dispose();
     _totalAmountCtrl.dispose();
     super.dispose();
   }
 
-  // --- REMOVED _selectDate and _selectTime functions ---
-  // These are no longer needed for the current visit date/time fields
-  // If next visit fields need them, they should be re-added or handled differently.
-  /*
-  Future<void> _selectDate(...) {...}
-  Future<void> _selectTime(...) {...}
-  */
-  // --- END REMOVED ---
+  Future<void> _selectDate(TextEditingController controller) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.teal),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
+    }
+  }
+
+  Future<void> _selectTime(TextEditingController controller) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.teal),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      controller.text = picked.format(context);
+    }
+  }
 
   void _saveVisit() async {
     if (_formKey.currentState!.validate()) {
@@ -81,6 +106,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
       if (_isPaid && _totalAmountCtrl.text.isNotEmpty) {
         _amountPaidCtrl.text = _totalAmountCtrl.text;
       }
+
       final newVisit = Visit(
         patientId: widget.patientId,
         date: _dateCtrl.text,
@@ -96,6 +122,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         amountPaid: double.tryParse(_amountPaidCtrl.text) ?? 0.0,
         totalAmount: double.tryParse(_totalAmountCtrl.text) ?? 0.0,
       );
+
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
@@ -110,20 +137,22 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
           duration: const Duration(seconds: 1),
         ),
       );
+
       await patientProvider.addVisit(newVisit);
-      // Add new appointment if next visit date is provided
+
       if (_nextVisitDateCtrl.text.isNotEmpty) {
         final newAppointment = Appointment(
           patientId: widget.patientId,
           date: _nextVisitDateCtrl.text,
           time: _nextVisitTimeCtrl.text.isNotEmpty
               ? _nextVisitTimeCtrl.text
-              : '09:00 AM', // Use provided time or default
-          notes: 'Prochaine visite (auto-générée)', // Default notes
+              : '09:00 AM',
+          notes: 'Prochaine visite (auto-générée)',
           status: 'Scheduled',
         );
         await patientProvider.addAppointment(newAppointment);
       }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -146,7 +175,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     TextInputType keyboardType = TextInputType.text,
     int? maxLines = 1,
     String? Function(String?)? validator,
-    VoidCallback? onTap, // Keep this parameter for flexibility in other fields
+    VoidCallback? onTap,
     bool readOnly = false,
     Widget? suffixIcon,
     Widget? prefixIcon,
@@ -223,7 +252,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         keyboardType: keyboardType,
         maxLines: maxLines,
         validator: validator,
-        onTap: onTap, // This will be null for the date/time fields now
+        onTap: onTap,
         readOnly: readOnly,
         textInputAction: textInputAction,
         enabled: enabled,
@@ -245,7 +274,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     );
   }
 
-  // Modified _buildSection to include card-like styling
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -255,7 +283,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
       children: [
         _buildSectionHeader(title),
         Container(
-          margin: const EdgeInsets.only(bottom: 20.0), // Space between sections
+          margin: const EdgeInsets.only(bottom: 20.0),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -267,7 +295,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(20.0), // Inner padding for the card
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -281,11 +309,11 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
+
     return PopScope(
-      canPop: false, // Disable default back swipe/pop
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        // Show confirmation dialog
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -304,9 +332,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                     'Non',
                     style: GoogleFonts.montserrat(color: Colors.teal),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                  },
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
                 TextButton(
                   child: Text(
@@ -314,8 +340,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                     style: GoogleFonts.montserrat(color: Colors.red),
                   ),
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                    Navigator.of(context).pop(); // Pop the screen
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
                   },
                 ),
               ],
@@ -327,18 +353,14 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
           backgroundColor: Colors.white,
-          elevation: 0, // Remove shadow for a flatter look
-          toolbarHeight: 80, // Adjust height as needed
+          elevation: 0,
+          toolbarHeight: 80,
           title: Padding(
-            padding: const EdgeInsets.only(
-              left: 0.0,
-            ), // Adjust padding for title if necessary
+            padding: const EdgeInsets.only(left: 0.0),
             child: Text(
-              'Ajouter une Nouvelle Visite', // Add new patient
+              'Ajouter une Nouvelle Visite',
               style: GoogleFonts.montserrat(
-                fontSize:
-                    (isTablet ? 32 : 24) *
-                    textScaleFactor, // Adjusted font size
+                fontSize: (isTablet ? 32 : 24) * textScaleFactor,
                 fontWeight: FontWeight.bold,
                 color: Colors.teal.shade800,
               ),
@@ -353,7 +375,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                 size: isTablet ? 32 : 28,
               ),
               onPressed: () {
-                // Show confirmation dialog when back button is pressed
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {
@@ -374,9 +395,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                             'Non',
                             style: GoogleFonts.montserrat(color: Colors.teal),
                           ),
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Close dialog
-                          },
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
                         TextButton(
                           child: Text(
@@ -384,8 +403,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                             style: GoogleFonts.montserrat(color: Colors.red),
                           ),
                           onPressed: () {
-                            Navigator.of(context).pop(); // Close dialog
-                            Navigator.of(context).pop(); // Pop the screen
+                            Navigator.of(context).pop();
+                            Navigator.of(context).pop();
                           },
                         ),
                       ],
@@ -426,26 +445,26 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                         _buildSection(
                           title: 'Détails de la Visite',
                           children: [
-                            // --- REPLACED: Use custom info widget for current date/time ---
-                            _VisitDateTimeInfo(
-                              date: _dateCtrl.text,
-                              time: _timeCtrl.text,
-                              isTablet: isTablet,
+                            // ✅ Replaced with shared VisitDateTimeInfo
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
+                              child: VisitDateTimeInfo(
+                                date: _dateCtrl.text,
+                                time: _timeCtrl.text,
+                                isTablet: isTablet,
+                                showTime: true,
+                              ),
                             ),
-                            // --- END REPLACED ---
+                            // Motif, findings, treatment, notes, etc.
                             _buildTextField(
                               controller: _purposeCtrl,
                               labelText: 'Motif',
                               prefixIcon: const Icon(Icons.description),
                               maxLines: null,
                               keyboardType: TextInputType.multiline,
-                              textInputAction: TextInputAction.next, // Changed
-                              // validator: (value) { // Removed validator
-                              //   if (value == null || value.isEmpty) {
-                              //     return 'Veuillez entrer le motif de la visite';
-                              //   }
-                              //   return null;
-                              // },
+                              textInputAction: TextInputAction.next,
                             ),
                             _buildTextField(
                               controller: _findingsCtrl,
@@ -453,13 +472,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                               prefixIcon: const Icon(Icons.search),
                               maxLines: null,
                               keyboardType: TextInputType.multiline,
-                              textInputAction: TextInputAction.next, // Changed
-                              // validator: (value) { // Removed validator
-                              //   if (value == null || value.isEmpty) {
-                              //     return 'Veuillez entrer les constatations';
-                              //   }
-                              //   return null;
-                              // },
+                              textInputAction: TextInputAction.next,
                             ),
                             _buildTextField(
                               controller: _treatmentCtrl,
@@ -467,13 +480,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                               prefixIcon: const Icon(Icons.healing),
                               maxLines: null,
                               keyboardType: TextInputType.multiline,
-                              textInputAction: TextInputAction.next, // Changed
-                              // validator: (value) { // Removed validator
-                              //   if (value == null || value.isEmpty) {
-                              //     return 'Veuillez entrer le traitement';
-                              //   }
-                              //   return null;
-                              // },
+                              textInputAction: TextInputAction.next,
                             ),
                             _buildTextField(
                               controller: _notesCtrl,
@@ -481,7 +488,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                               prefixIcon: const Icon(Icons.note),
                               maxLines: null,
                               keyboardType: TextInputType.multiline,
-                              textInputAction: TextInputAction.next, // Changed
+                              textInputAction: TextInputAction.next,
                             ),
                             _buildTextField(
                               controller: _nextVisitDateCtrl,
@@ -489,22 +496,17 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                   'Date de la Prochaine Visite (Optionnel)',
                               prefixIcon: const Icon(Icons.event_available),
                               readOnly: true,
-                              // onTap: () =>
-                              //     _selectDate(context, _nextVisitDateCtrl), // REMOVED - Pickers handled elsewhere or not needed here
-                              textInputAction: TextInputAction
-                                  .next, // Changed as there's another field now
+                              onTap: () => _selectDate(_nextVisitDateCtrl),
+                              textInputAction: TextInputAction.next,
                             ),
                             _buildTextField(
-                              // Added for next visit time
                               controller: _nextVisitTimeCtrl,
                               labelText:
                                   'Heure de la Prochaine Visite (Optionnel)',
                               prefixIcon: const Icon(Icons.access_time),
                               readOnly: true,
-                              // onTap: () =>
-                              //     _selectTime(context, _nextVisitTimeCtrl), // REMOVED - Pickers handled elsewhere or not needed here
-                              textInputAction: TextInputAction
-                                  .done, // Last field in the section
+                              onTap: () => _selectTime(_nextVisitTimeCtrl),
+                              textInputAction: TextInputAction.done,
                             ),
                           ],
                         ),
@@ -517,8 +519,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                   child: _buildTextField(
                                     controller: _totalAmountCtrl,
                                     labelText: 'Montant Total (Optionnel)',
-                                    prefixText:
-                                        'DT ', // Changed from '$' to 'DT '
+                                    prefixText: 'DT ',
                                     prefixIcon: const Icon(Icons.attach_money),
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
@@ -526,10 +527,10 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                         ),
                                     textInputAction: TextInputAction.next,
                                     validator: (value) {
-                                      if (value != null && value.isNotEmpty) {
-                                        if (double.tryParse(value) == null) {
-                                          return 'Montant invalide';
-                                        }
+                                      if (value != null &&
+                                          value.isNotEmpty &&
+                                          double.tryParse(value) == null) {
+                                        return 'Montant invalide';
                                       }
                                       return null;
                                     },
@@ -540,8 +541,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                   child: _buildTextField(
                                     controller: _amountPaidCtrl,
                                     labelText: 'Montant Payé (Optionnel)',
-                                    prefixText:
-                                        'DT ', // Changed from '$' to 'DT '
+                                    prefixText: 'DT ',
                                     prefixIcon: const Icon(Icons.payments),
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
@@ -555,12 +555,10 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                         final total = double.tryParse(
                                           _totalAmountCtrl.text,
                                         );
-                                        if (paid == null) {
+                                        if (paid == null)
                                           return 'Montant invalide';
-                                        }
-                                        if (total != null && paid > total) {
+                                        if (total != null && paid > total)
                                           return 'Ne peut dépasser le total';
-                                        }
                                       }
                                       return null;
                                     },
@@ -573,8 +571,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                 vertical: 8.0,
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment
-                                    .spaceBetween, // Distribute space
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Payé entièrement',
@@ -588,13 +586,10 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                     onChanged: (value) {
                                       setState(() {
                                         _isPaid = value;
-                                        if (_isPaid) {
-                                          if (_totalAmountCtrl
-                                              .text
-                                              .isNotEmpty) {
-                                            _amountPaidCtrl.text =
-                                                _totalAmountCtrl.text;
-                                          }
+                                        if (_isPaid &&
+                                            _totalAmountCtrl.text.isNotEmpty) {
+                                          _amountPaidCtrl.text =
+                                              _totalAmountCtrl.text;
                                         } else {
                                           _amountPaidCtrl.clear();
                                         }
@@ -609,17 +604,11 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                             ),
                           ],
                         ),
-                        // --- REPLACED: Moved button inside scrollable content ---
-                        const SizedBox(
-                          height: 20,
-                        ), // Add some space before the button
+                        const SizedBox(height: 20),
                         Align(
-                          alignment:
-                              Alignment.centerRight, // Align to the right
+                          alignment: Alignment.centerRight,
                           child: SizedBox(
-                            width: isTablet
-                                ? 300
-                                : 250, // Constrain button width
+                            width: isTablet ? 300 : 250,
                             child: MainButton(
                               onPressed: _saveVisit,
                               label: 'Ajouter une visite',
@@ -630,10 +619,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                           ),
                         ),
                         const SizedBox(height: 30),
-                        const SizedBox(
-                          height: 30,
-                        ), // Add space at the very bottom
-                        // --- END REPLACED ---
                       ],
                     ),
                   ),
@@ -642,117 +627,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
             );
           },
         ),
-        // --- REMOVED FLOATING ACTION BUTTON PROPERTIES ---
-        // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        // floatingActionButton: MainButton(
-        //   onPressed: _saveVisit,
-        //   label: 'Ajouter une visite',
-        //   icon: Icons.add,
-        //   backgroundColor: Colors.teal,
-        //   foregroundColor: Colors.white,
-        //   heroTag: 'addVisitSaveButton',
-        // ),
-        // --- END REMOVED ---
-      ),
-    );
-  }
-}
-
-// Helper widget to display non-editable visit date/time information
-class _VisitDateTimeInfo extends StatelessWidget {
-  final String date;
-  final String time;
-  final bool isTablet;
-  const _VisitDateTimeInfo({
-    required this.date,
-    required this.time,
-    required this.isTablet,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          // Date Section
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                vertical: 16.0,
-                horizontal: 20.0,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50, // Light background
-                borderRadius: BorderRadius.circular(15.0),
-                border: Border.all(
-                  color: Colors.grey.shade300, // Light border
-                  width: 1.0,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    color: Colors.teal.shade700,
-                    size: isTablet ? 28.0 : 24.0,
-                  ),
-                  const SizedBox(width: 12.0),
-                  Expanded(
-                    child: Text(
-                      date,
-                      style: GoogleFonts.montserrat(
-                        fontSize: isTablet ? 18.0 : 16.0,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade800, // Slightly darker text
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 16.0), // Space between date and time
-          // Time Section
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                vertical: 16.0,
-                horizontal: 20.0,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50, // Light background
-                borderRadius: BorderRadius.circular(15.0),
-                border: Border.all(
-                  color: Colors.grey.shade300, // Light border
-                  width: 1.0,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: Colors.teal.shade700,
-                    size: isTablet ? 28.0 : 24.0,
-                  ),
-                  const SizedBox(width: 12.0),
-                  Expanded(
-                    child: Text(
-                      time,
-                      style: GoogleFonts.montserrat(
-                        fontSize: isTablet ? 18.0 : 16.0,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade800, // Slightly darker text
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

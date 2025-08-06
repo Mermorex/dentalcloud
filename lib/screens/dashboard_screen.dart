@@ -1,20 +1,15 @@
 // lib/screens/dashboard_screen.dart
-// (Subscription flow removed)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-// --- IMPORT THE NEW WIDGET ---
 import '../widgets/disconnect_button.dart';
 import '../providers/patient_provider.dart';
-// --- REMOVED SubscriptionProvider import ---
-// import '../providers/subscription_provider.dart'; // <-- Removed Import
-// --- REMOVED TrialExpiredScreen import ---
-// import '../screens/trial_expired_screen.dart'; // <-- Removed Import
-// --- OTHER EXISTING IMPORTS ---
 import '../models/appointment.dart';
 import '../models/patient.dart';
-import '../screens/patient_detail_screen.dart';
+import '../models/visit.dart'; // Import Visit model
+import '../screens/patient_detail_screen.dart'; // Import PatientDetailScreen
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback? onDisconnect;
@@ -25,48 +20,67 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Helper method to detect mobile layout
+  bool isMobile() {
+    return MediaQuery.of(context).size.width < 600;
+  }
+
   final Map<String, String> _statusTranslations = const {
     'Scheduled': 'Programmé',
-    'Completed': 'Terminé',
+    'Completed':
+        'Reporté', // Note: Original seems to have 'Completed' -> 'Reporté'. Keeping as is.
     'Cancelled': 'Annulé',
     'No Show': 'Absent',
   };
+  // --- FIX: Make Futures nullable instead of 'late' to prevent LateInitializationError ---
+  Future<List<Visit>>? _todaysVisitsFuture;
+  Future<Map<String, String>>? _patientNamesFuture;
+  // --- END OF FIX ---
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // <-- Made async
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
       );
-      // Load appointments as before
       patientProvider.loadAppointments();
-      // --- REMOVED SUBSCRIPTION CHECK ---
-      // The code that fetched subscription status here is removed.
-      // The dashboard will now load without checking subscription status.
+      _loadVisitData(patientProvider); // Load visit data
     });
   }
+
+  // --- NEW: Method to load visit data for the dashboard ---
+  Future<void> _loadVisitData(PatientProvider patientProvider) async {
+    // --- Load all patients first to get names ---
+    await patientProvider.loadPatients();
+    final patientList = patientProvider.patients;
+    final patientNamesMap = <String, String>{};
+    for (var patient in patientList) {
+      if (patient.id != null) {
+        patientNamesMap[patient.id!] = patient.name;
+      }
+    }
+    setState(() {
+      _patientNamesFuture = Future.value(patientNamesMap);
+      // --- Fetch all visits and filter for today ---
+      _todaysVisitsFuture = patientProvider.getAllVisits().then((allVisits) {
+        final String todayString = DateFormat(
+          'yyyy-MM-dd',
+        ).format(DateTime.now());
+        // Filter visits for today and sort by time descending (most recent first)
+        return allVisits.where((visit) => visit.date == todayString).toList()
+          ..sort((a, b) {
+            return b.time.compareTo(a.time); // Sort by time descending
+          });
+      });
+    });
+  }
+  // --- END OF NEW ---
 
   @override
   Widget build(BuildContext context) {
     final patientProvider = Provider.of<PatientProvider>(context);
-    // --- REMOVED SubscriptionProvider ACCESS ---
-    // final subscriptionProvider = Provider.of<SubscriptionProvider>(
-    //   context,
-    // ); // <-- Removed Access
-    // --- REMOVED LOADING, ERROR, and SUBSCRIPTION STATUS CHECKS ---
-    // The dashboard will now always show its main content.
-
-    print(
-      "DashboardScreen build: Showing main dashboard content (subscription check removed).",
-    );
-
-    // --- SHOW MAIN DASHBOARD CONTENT ---
-    // The rest of your existing DashboardScreen build method goes here.
-    // Wrap the existing content in a Widget (like a Column or Container) for clarity.
-    final List<Appointment> allAppointments = patientProvider.appointments;
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat(
@@ -77,470 +91,766 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String todayDate =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final String? currentCabinetName = patientProvider.currentCabinetName;
-    final String? currentCabinetId = patientProvider.currentCabinetId;
-    String welcomeMessage;
-    if (currentCabinetName != null && currentCabinetName.isNotEmpty) {
-      welcomeMessage = 'Bienvenue au cabinet "$currentCabinetName"';
-    } else if (currentCabinetId != null && currentCabinetId.isNotEmpty) {
-      welcomeMessage = 'Bienvenue au cabinet (ID: "$currentCabinetId")';
-    } else {
-      welcomeMessage = 'Tableau de bord';
-    }
-    final List<Appointment> todayAppointments = allAppointments.where((
-      appointment,
-    ) {
-      return appointment.date == todayDate;
-    }).toList()..sort((a, b) => a.time.compareTo(b.time));
+    final List<Appointment> allAppointments = patientProvider.appointments;
+    final List<Appointment> todayAppointments =
+        allAppointments.where((a) => a.date == todayDate).toList()
+          ..sort((a, b) => a.time.compareTo(b.time));
     final List<Appointment> thisWeekAppointments =
-        allAppointments.where((appointment) {
-          final DateTime appointmentDate = DateTime.parse(appointment.date);
+        allAppointments.where((a) {
+          final DateTime appointmentDate = DateTime.parse(a.date);
+          final DateTime today = DateTime(now.year, now.month, now.day);
+          final DateTime tomorrow = today.add(const Duration(days: 1));
+          final DateTime endOfNextWeek = today.add(
+            const Duration(days: 8),
+          ); // Up to 7 days from today (exclusive)
+
+          // Check if appointment is from tomorrow up to 7 days ahead
           return appointmentDate.isAfter(
-                now.subtract(const Duration(days: 1)),
+                tomorrow.subtract(const Duration(days: 1)),
               ) &&
-              appointmentDate.isBefore(now.add(const Duration(days: 7)));
+              appointmentDate.isBefore(endOfNextWeek);
         }).toList()..sort((a, b) {
           int dateComparison = a.date.compareTo(b.date);
-          if (dateComparison != 0) {
-            return dateComparison;
-          }
+          if (dateComparison != 0) return dateComparison;
           return a.time.compareTo(b.time);
         });
-
-    // Return the main dashboard content
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- YOUR EXISTING DASHBOARD CONTENT WIDGETS GO HERE ---
-              // Enhanced Header with Welcome Message
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: isTablet ? 24.0 : 16.0,
-                  top: isTablet ? 10.0 : 0.0,
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final bool showDisconnectButton =
-                        constraints.maxWidth <= 600;
-                    String? displayCabinetInfo;
-                    if (currentCabinetName != null &&
-                        currentCabinetName.isNotEmpty) {
-                      displayCabinetInfo = currentCabinetName;
-                    } else if (currentCabinetId != null &&
-                        currentCabinetId.isNotEmpty) {
-                      displayCabinetInfo = currentCabinetId;
-                    }
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Bienvenue au ',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: isTablet ? 28 : 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.teal.shade800,
-                                      ),
-                                    ),
-                                    if (displayCabinetInfo != null &&
-                                        displayCabinetInfo.isNotEmpty)
-                                      Text(
-                                        displayCabinetInfo,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: isTablet ? 28 : 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.teal.shade800,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (displayCabinetInfo != null &&
-                                  displayCabinetInfo.isNotEmpty)
-                                Text(
-                                  'Gestion des patients et rendez-vous',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: isTablet ? 18 : 16,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (showDisconnectButton) ...[
-                          const Spacer(),
-                          DisconnectButton(
-                            onPressed:
-                                widget.onDisconnect ??
-                                () {
-                                  print(
-                                    "DashboardScreen: Disconnect callback not provided or null.",
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Erreur: Déconnexion non configurée correctement.',
-                                        style: GoogleFonts.montserrat(),
-                                      ),
-                                    ),
-                                  );
-                                  // Consider navigating via HomeScreen's method if possible,
-                                  // or directly if necessary (less ideal).
-                                  Navigator.of(
-                                    context,
-                                  ).pushReplacementNamed('/login');
-                                },
-                            isTablet: isTablet,
-                            isInAppBar: true,
-                          ),
-                          SizedBox(width: isTablet ? 12 : 8),
-                        ] else
-                          SizedBox(width: isTablet ? 12 : 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 32.0 : 16.0,
+            vertical: isTablet ? 24.0 : 16.0,
+          ),
+          // --- NEW: Wrap in RefreshIndicator for pull-to-refresh ---
+          child: RefreshIndicator(
+            onRefresh: () => _loadVisitData(patientProvider),
+            // --- END OF NEW ---
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // --- HEADER ---
+                  Row(
+                    children: [
+                      // ✅ Show logo only on mobile
+                      if (!isTablet)
                         Image.asset(
-                          'assets/images/tooth_logo.png',
-                          width: isTablet ? 48 : 36,
-                          height: isTablet ? 48 : 36,
+                          'assets/images/dentypro_logo.png',
+                          height: 50,
+                          fit: BoxFit.contain,
                         ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              // Current Date and Time Display
-              Container(
-                padding: EdgeInsets.all(isTablet ? 24.0 : 20.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Aujourd\'hui',
-                      style: GoogleFonts.montserrat(
-                        fontSize: isTablet ? 26 : 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade700,
+                      if (!isTablet)
+                        const Spacer(), // Balance spacing only if logo is visible
+                      // Disconnect Button (only on mobile)
+                      if (widget.onDisconnect != null && !isTablet)
+                        DisconnectButton(
+                          onPressed: widget.onDisconnect!,
+                          isTablet: isTablet,
+                          isInAppBar: false,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // --- WELCOME BANNER ---
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.teal.shade700, Colors.teal.shade500],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                       ),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    SizedBox(height: isTablet ? 16 : 12),
-                    Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.calendar_month,
-                          color: Colors.teal.shade600,
-                          size: isTablet ? 30 : 24,
-                        ),
-                        SizedBox(width: isTablet ? 12 : 10),
                         Text(
-                          formattedDate,
+                          'Bonjour 👋',
                           style: GoogleFonts.montserrat(
-                            fontSize: isTablet ? 20 : 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
+                            fontSize: 18,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          currentCabinetName != null
+                              ? 'Cabinet $currentCabinetName'
+                              : 'Bienvenue',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: isTablet ? 12 : 10),
-                    Row(
+                  ),
+                  const SizedBox(height: 32),
+                  // --- DATE & TIME ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedDate,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.access_time,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedTime,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // --- STATS CARDS (CENTERED ON TABLET) INCLUDING TODAY'S PAID VISIT TOTAL ---
+                  Center(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 16,
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          color: Colors.teal.shade600,
-                          size: isTablet ? 30 : 24,
+                        _buildStatCard(
+                          "Aujourd'hui",
+                          todayAppointments.length,
+                          Icons.calendar_today,
+                          Colors.blue,
                         ),
-                        SizedBox(width: isTablet ? 12 : 10),
-                        Text(
-                          formattedTime,
-                          style: GoogleFonts.montserrat(
-                            fontSize: isTablet ? 20 : 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
-                          ),
+                        _buildStatCard(
+                          "Cette semaine",
+                          thisWeekAppointments.length,
+                          Icons.event,
+                          Colors.green,
                         ),
+                        _buildStatCard(
+                          "Patients",
+                          patientProvider.patients.length,
+                          Icons.person,
+                          Colors.orange,
+                        ),
+                        // --- STAT CARD: TODAY'S PAID VISIT TOTAL AMOUNT ---
+                        // This correctly calculates and displays the sum of amountPaid for today's visits
+                        FutureBuilder<double>(
+                          future: _todaysVisitsFuture?.then((visits) {
+                            double totalPaid = 0.0;
+                            for (var visit in visits) {
+                              totalPaid += visit.amountPaid ?? 0.0;
+                            }
+                            return totalPaid;
+                          }),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              // Show a loading card similar to _buildStatCard
+                              return _buildLoadingStatCard(
+                                "Total payé aujourd'hui",
+                                Icons.attach_money,
+                                Colors.teal,
+                                isTablet,
+                              );
+                            } else if (snapshot.hasError) {
+                              print(
+                                "Error calculating today's paid visit total: ${snapshot.error}",
+                              );
+                              // Show an error card or fallback value
+                              return _buildStatCard(
+                                "Total payé aujourd'hui",
+                                0, // Fallback value
+                                Icons.attach_money,
+                                Colors.teal, // Or error color like red
+                              );
+                            } else {
+                              final totalPaidToday = snapshot.data ?? 0.0;
+                              return _buildStatCard(
+                                "Total payé aujourd'hui",
+                                totalPaidToday, // Pass the double value
+                                Icons.attach_money,
+                                Colors.teal,
+                                isCurrency: true, // Flag to format as currency
+                              );
+                            }
+                          },
+                        ),
+                        // --- END OF NEW STAT CARD ---
                       ],
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: isTablet ? 35 : 25),
-              // Highlighted "Rendez-vous d'aujourd'hui"
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 20 : 16,
-                  vertical: isTablet ? 14 : 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
-                  borderRadius: BorderRadius.circular(15.0),
-                  border: Border.all(color: Colors.teal.shade200, width: 1),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Rendez-vous d'aujourd'hui",
-                      style: GoogleFonts.montserrat(
-                        fontSize: isTablet ? 22 : 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade600,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        todayAppointments.length.toString(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: isTablet ? 18 : 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: isTablet ? 20 : 16),
-              todayAppointments.isEmpty
-                  ? _buildEmptyAppointmentState(
-                      'Aucun rendez-vous prévu pour aujourd\'hui.',
-                      isTablet,
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: todayAppointments.length,
-                      itemBuilder: (context, index) {
-                        final appointment = todayAppointments[index];
-                        final patientName = patientProvider.getPatientNameById(
-                          appointment.patientId,
+                  ),
+                  const SizedBox(height: 32),
+                  // --- TODAY'S VISITS LIST ---
+                  _buildSectionTitle(
+                    "Visites récentes (Aujourd'hui)",
+                    Icons.access_time_outlined,
+                  ), // Slightly different icon
+                  const SizedBox(height: 16),
+                  // --- FIX: Use null-aware FutureBuilder for visits list ---
+                  FutureBuilder<List<Visit>>(
+                    future: _todaysVisitsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        print(
+                          "Error loading today's visits: ${snapshot.error}",
                         );
-                        return AppointmentCard(
-                          appointment: appointment,
-                          patientName: patientName,
-                          statusTranslations: _statusTranslations,
-                          isImportant: true,
-                          isTablet: isTablet,
-                          onTap: () async {
-                            try {
-                              final patient = patientProvider.patients
-                                  .firstWhere(
-                                    (p) => p.id == appointment.patientId,
-                                  );
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      PatientDetailScreen(patient: patient),
-                                ),
-                              );
-                            } catch (e) {
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Erreur: Patient non trouvé.',
-                                    style: GoogleFonts.montserrat(),
+                        return Center(child: Text('Erreur: ${snapshot.error}'));
+                      } else if (snapshot.hasData) {
+                        final visits = snapshot.data!;
+                        if (visits.isEmpty) {
+                          return _buildEmptyState(
+                            "Aucune visite aujourd'hui.",
+                            Icons.event_busy_outlined,
+                          ); // Slightly different icon
+                        } else {
+                          // --- FIX: Use null-aware FutureBuilder for patient names ---
+                          return FutureBuilder<Map<String, String>>(
+                            future: _patientNamesFuture,
+                            builder: (context, namesSnapshot) {
+                              final patientNames = namesSnapshot.data ?? {};
+                              // Limit the number of visits shown, e.g., to 5
+                              final int maxVisitsToShow = 5;
+                              final int visitCount = visits.length;
+                              final bool showSeeAll =
+                                  visitCount > maxVisitsToShow;
+                              final List<Visit> visitsToShow = visits
+                                  .take(maxVisitsToShow)
+                                  .toList();
+                              return Column(
+                                children: [
+                                  SizedBox(
+                                    height: math.min(
+                                      visitsToShow.length * 100.0,
+                                      350,
+                                    ), // Slightly increased height estimation for card with InkWell feedback
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      itemCount: visitsToShow.length,
+                                      separatorBuilder: (_, __) =>
+                                          const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        final visit = visitsToShow[index];
+                                        final patientName =
+                                            patientNames[visit.patientId] ??
+                                            'Patient inconnu';
+                                        // --- Wrap VisitCard with InkWell for tap interaction ---
+                                        return InkWell(
+                                          onTap: () async {
+                                            try {
+                                              // Find the patient object from the provider's list
+                                              final patient = patientProvider
+                                                  .patients
+                                                  .firstWhere(
+                                                    (p) =>
+                                                        p.id == visit.patientId,
+                                                    orElse: () => throw Exception(
+                                                      'Patient not found for visit',
+                                                    ),
+                                                  );
+                                              // Navigate to PatientDetailScreen
+                                              await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      PatientDetailScreen(
+                                                        patient: patient,
+                                                      ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              if (!mounted) return;
+                                              print(
+                                                "Error navigating to patient detail from visit: $e",
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Erreur: Patient non trouvé ou impossible d\'ouvrir les détails.',
+                                                    style:
+                                                        GoogleFonts.montserrat(),
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ), // Match card border radius
+                                          child: _buildVisitCard(
+                                            visit,
+                                            patientName,
+                                            isTablet,
+                                          ), // Use the existing card widget
+                                        );
+                                        // --- END OF NEW ---
+                                      },
+                                    ),
                                   ),
-                                  backgroundColor: Colors.red,
-                                ),
+                                ],
                               );
-                            }
-                          },
+                            },
+                          );
+                        }
+                      } else {
+                        // Handle case where future completes with no data (e.g., empty list from getAllVisits)
+                        return _buildEmptyState(
+                          "Aucune donnée de visite disponible.",
+                          Icons.info_outline,
                         );
-                      },
-                    ),
-              SizedBox(height: isTablet ? 35 : 25),
-              // Highlighted "Rendez-vous de cette semaine"
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 20 : 16,
-                  vertical: isTablet ? 14 : 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
-                  borderRadius: BorderRadius.circular(15.0),
-                  border: Border.all(color: Colors.teal.shade200, width: 1),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Rendez-vous de cette semaine",
-                      style: GoogleFonts.montserrat(
-                        fontSize: isTablet ? 22 : 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.teal.shade600,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        thisWeekAppointments.length.toString(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: isTablet ? 18 : 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  // --- TODAY'S APPOINTMENTS ---
+                  _buildSectionTitle(
+                    "Rendez-vous d'aujourd'hui",
+                    Icons.event_available, // Changed icon for distinction
+                  ),
+                  const SizedBox(height: 16),
+                  todayAppointments.isEmpty
+                      ? _buildEmptyState(
+                          "Aucun rendez-vous aujourd'hui.",
+                          Icons.event_busy,
+                        )
+                      : SizedBox(
+                          height: math.min(
+                            todayAppointments.length * 90.0,
+                            300,
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: todayAppointments.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final appointment = todayAppointments[index];
+                              final patientName = patientProvider
+                                  .getPatientNameById(appointment.patientId);
+                              return _buildAppointmentCard(
+                                appointment,
+                                patientName,
+                                true,
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
+                  // --- THIS WEEK ---
+                  const SizedBox(height: 24),
+                  _buildSectionTitle(
+                    "Rendez-vous de la semaine",
+                    Icons.event_note,
+                  ),
+                  const SizedBox(height: 16),
+                  thisWeekAppointments.isEmpty
+                      ? _buildEmptyState(
+                          "Aucun autre rendez-vous cette semaine.",
+                          Icons.event_available,
+                        )
+                      : SizedBox(
+                          height: math.min(
+                            thisWeekAppointments.length * 90.0,
+                            300,
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: thisWeekAppointments.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final appointment = thisWeekAppointments[index];
+                              final patientName = patientProvider
+                                  .getPatientNameById(appointment.patientId);
+                              return _buildAppointmentCard(
+                                appointment,
+                                patientName,
+                                false,
+                              );
+                            },
+                          ),
+                        ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              SizedBox(height: isTablet ? 20 : 16),
-              thisWeekAppointments.isEmpty
-                  ? _buildEmptyAppointmentState(
-                      'Aucun rendez-vous prévu pour cette semaine.',
-                      isTablet,
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: thisWeekAppointments.length,
-                      itemBuilder: (context, index) {
-                        final appointment = thisWeekAppointments[index];
-                        final patientName = patientProvider.getPatientNameById(
-                          appointment.patientId,
-                        );
-                        return AppointmentCard(
-                          appointment: appointment,
-                          patientName: patientName,
-                          statusTranslations: _statusTranslations,
-                          isImportant: false,
-                          isTablet: isTablet,
-                          onTap: () async {
-                            try {
-                              final patient = patientProvider.patients
-                                  .firstWhere(
-                                    (p) => p.id == appointment.patientId,
-                                  );
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      PatientDetailScreen(patient: patient),
-                                ),
-                              );
-                            } catch (e) {
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Erreur: Patient non trouvé.',
-                                    style: GoogleFonts.montserrat(),
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                        );
-                      },
-                    ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyAppointmentState(String message, bool isTablet) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.teal.shade50,
-              shape: BoxShape.circle,
+  // --- MODIFIED _buildStatCard to accept double and format currency ---
+  Widget _buildStatCard(
+    String title,
+    dynamic count,
+    IconData icon,
+    Color color, {
+    bool isCurrency = false,
+  }) {
+    // Format the count based on whether it's currency or a simple integer
+    String formattedCount;
+    if (isCurrency) {
+      // Ensure count is a double for currency formatting
+      double amount = count is double
+          ? count
+          : (count is int ? count.toDouble() : 0.0);
+      formattedCount = '${NumberFormat("#,##0.00", "fr_FR").format(amount)} DT';
+    } else {
+      // Assume it's an integer count
+      int number = count is int ? count : (count is double ? count.toInt() : 0);
+      formattedCount = '$number';
+    }
+    return SizedBox(
+      width: isMobile() ? double.infinity : 200,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedCount, // Use the formatted string
+                    style: GoogleFonts.montserrat(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Icon(
-              Icons.event_busy_outlined,
-              size: isTablet ? 80 : 60,
-              color: Colors.teal.shade300,
+          ],
+        ),
+      ),
+    );
+  }
+  // --- END OF MODIFIED _buildStatCard ---
+
+  // --- NEW WIDGET: Loading Stat Card ---
+  Widget _buildLoadingStatCard(
+    String title,
+    IconData icon,
+    Color color,
+    bool isTablet,
+  ) {
+    return SizedBox(
+      width: isMobile() ? double.infinity : 200,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const SizedBox(
+                    height: 20,
+                    width: 80, // Adjust width as needed
+                    child: LinearProgressIndicator(
+                      color: Colors.teal,
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  // --- END OF NEW WIDGET ---
+
+  // --- MODIFIED _buildVisitCard: Display totalAmount instead of amountPaid ---
+  // The InkWell in the itemBuilder now handles the card-like container and tap feedback.
+  Widget _buildVisitCard(Visit visit, String patientName, bool isTablet) {
+    // --- REMOVED: outer Card widget ---
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 12.0,
+      ), // Increased padding slightly
+      decoration: BoxDecoration(
+        color: Colors.white, // Background color
+        borderRadius: BorderRadius.circular(12), // Border radius
+        boxShadow: [
+          // Subtle shadow for depth, similar to Card
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        // Use Row for horizontal layout similar to ListTile
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  patientName,
+                  style: GoogleFonts.montserrat(
+                    fontSize: isTablet ? 18 : 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  visit.purpose ?? 'Pas de motif',
+                  style: GoogleFonts.montserrat(
+                    fontSize: isTablet ? 14 : 12,
+                    color: Colors.grey.shade700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_outlined,
+                      size: 14,
+                      color: Colors.grey.shade600,
+                    ), // Slightly different icon
+                    const SizedBox(width: 4),
+                    Text(
+                      visit.time,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: isTablet ? 18 : 16,
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
-              ),
+          // --- CHANGED: Display totalAmount instead of amountPaid ---
+          Text(
+            '${NumberFormat("#,##0.00", "fr_FR").format(visit.totalAmount ?? 0.0)} DT',
+            style: GoogleFonts.montserrat(
+              fontSize: isTablet ? 16 : 14,
+              fontWeight: FontWeight.bold,
+              color: Colors
+                  .teal
+                  .shade700, // You might want to change color based on total vs paid
+            ),
+          ),
+          // --- END OF CHANGE ---
+        ],
+      ),
+    );
+    // --- END OF CHANGE ---
+  }
+  // --- END OF MODIFIED VISIT CARD ---
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.teal, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.montserrat(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal.shade800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Center(
+      child: Column(
+        children: [
+          Icon(icon, size: 48, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              color: Colors.grey.shade500,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// The AppointmentCard class remains mostly the same, with the addition of the onTap parameter
-class AppointmentCard extends StatelessWidget {
-  final Appointment appointment;
-  final String patientName;
-  final Map<String, String> statusTranslations;
-  final bool isImportant;
-  final bool isTablet;
-  final VoidCallback? onTap; // Add the onTap callback
-  const AppointmentCard({
-    super.key,
-    required this.appointment,
-    required this.patientName,
-    required this.statusTranslations,
-    this.isImportant = false,
-    required this.isTablet,
-    this.onTap, // Include it in the constructor
-  });
-
-  String _getTranslatedStatus(String status) {
-    return statusTranslations[status] ?? status;
+  Widget _buildAppointmentCard(
+    Appointment appointment,
+    String patientName,
+    bool isToday,
+  ) {
+    final String status =
+        _statusTranslations[appointment.status] ?? appointment.status;
+    final Color statusColor = _getStatusColor(appointment.status);
+    final bool isImportant = isToday && appointment.status == 'Scheduled';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isImportant ? Colors.red.shade50 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isImportant
+              ? Colors.red.shade300
+              : statusColor.withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          try {
+            final patient = Provider.of<PatientProvider>(
+              context,
+              listen: false,
+            ).patients.firstWhere((p) => p.id == appointment.patientId);
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PatientDetailScreen(patient: patient),
+              ),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Erreur: Patient non trouvé.',
+                  style: GoogleFonts.montserrat(),
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    patientName,
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isImportant
+                          ? Colors.red.shade900
+                          : Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '🕒 ${appointment.time} • 📅 ${DateFormat('dd/MM', 'fr_FR').format(DateTime.parse(appointment.date))}',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  if (appointment.notes.isNotEmpty)
+                    Text(
+                      '📝 ${appointment.notes}',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: statusColor.withOpacity(0.4)),
+              ),
+              child: Text(
+                status,
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Color _getStatusColor(String status) {
@@ -556,191 +866,5 @@ class AppointmentCard extends StatelessWidget {
       default:
         return Colors.grey.shade700;
     }
-  }
-
-  Color _getLightStatusColor(String status) {
-    switch (status) {
-      case 'Scheduled':
-        return Colors.blue.shade50;
-      case 'Completed':
-        return Colors.green.shade50;
-      case 'Cancelled':
-        return Colors.red.shade50;
-      case 'No Show':
-        return Colors.orange.shade50;
-      default:
-        return Colors.grey.shade50;
-    }
-  }
-
-  Color _getCardBorderColor(String status, bool isImportant) {
-    if (isImportant) {
-      return Colors.red.shade400;
-    }
-    switch (status) {
-      case 'Scheduled':
-        return Colors.blue.shade200;
-      case 'Completed':
-        return Colors.green.shade200;
-      case 'Cancelled':
-        return Colors.red.shade200;
-      case 'No Show':
-        return Colors.orange.shade200;
-      default:
-        return Colors.grey.shade200;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Color statusColor = _getStatusColor(appointment.status);
-    final Color lightStatusColor = _getLightStatusColor(appointment.status);
-    final Color cardBackgroundColor = isImportant
-        ? Colors.red.shade50
-        : Colors.white;
-    final Color cardBorderColor = _getCardBorderColor(
-      appointment.status,
-      isImportant,
-    );
-    final Color patientNameColor = isImportant
-        ? Colors.red.shade800
-        : Colors.grey.shade800;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
-      decoration: BoxDecoration(
-        color: cardBackgroundColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: cardBorderColor, width: 1.5),
-      ),
-      // Wrap the main content with InkWell for tap handling
-      child: InkWell(
-        onTap: onTap, // Use the provided onTap callback
-        borderRadius: BorderRadius.circular(20), // Match card border radius
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20.0 : 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      patientName,
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isTablet ? 22 : 20,
-                        color: patientNameColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  Icon(
-                    Icons.access_time,
-                    size: isTablet ? 24 : 20,
-                    color: Colors.grey.shade600,
-                  ),
-                  SizedBox(width: isTablet ? 10 : 8),
-                  Text(
-                    appointment.time,
-                    style: GoogleFonts.montserrat(
-                      fontSize: isTablet ? 19 : 17,
-                      color: Colors.grey.shade900,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: isTablet ? 10 : 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: isTablet ? 18 : 16,
-                    color: Colors.grey.shade500,
-                  ),
-                  SizedBox(width: isTablet ? 10 : 8),
-                  Text(
-                    'Date: ${DateFormat('dd MMM yyyy', 'fr_FR').format(DateTime.parse(appointment.date))}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: isTablet ? 16 : 14,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              if (appointment.notes.isNotEmpty) ...[
-                SizedBox(height: isTablet ? 10 : 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.notes,
-                      size: isTablet ? 18 : 16,
-                      color: Colors.grey.shade500,
-                    ),
-                    SizedBox(width: isTablet ? 10 : 8),
-                    Expanded(
-                      child: Text(
-                        'Notes: ${appointment.notes}',
-                        style: GoogleFonts.montserrat(
-                          fontSize: isTablet ? 16 : 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        softWrap: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              SizedBox(height: isTablet ? 15 : 12),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 12 : 10,
-                  vertical: isTablet ? 7 : 5,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: statusColor.withOpacity(0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  'Statut: ${_getTranslatedStatus(appointment.status)}',
-                  style: GoogleFonts.montserrat(
-                    fontSize: isTablet ? 15 : 13,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor.darken(0.1),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-extension ColorManipulation on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
   }
 }

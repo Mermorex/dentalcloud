@@ -6,45 +6,40 @@ import 'package:provider/provider.dart';
 import '../models/visit.dart';
 import '../providers/patient_provider.dart';
 import '../widgets/main_button.dart';
-import '../models/appointment.dart'; // Import the Appointment model if needed for updates
+import '../widgets/visit_date_time_info.dart'; // ← Import shared widget
 
 class EditVisitScreen extends StatefulWidget {
-  final Visit visit; // Receive the Visit object to edit
-  final String patientId; // Receive the patientId (passed from VisitCard)
-
+  final Visit visit;
+  final String patientId;
   const EditVisitScreen({
     super.key,
     required this.visit,
-    required this.patientId, // Mark as required
+    required this.patientId,
   });
-
   @override
   State<EditVisitScreen> createState() => _EditVisitScreenState();
 }
 
 class _EditVisitScreenState extends State<EditVisitScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers initialized with data from the passed Visit object
-  late final TextEditingController _dateCtrl;
-  late final TextEditingController _timeCtrl;
   late final TextEditingController _purposeCtrl;
   late final TextEditingController _findingsCtrl;
   late final TextEditingController _treatmentCtrl;
   late final TextEditingController _notesCtrl;
   late final TextEditingController _nextVisitDateCtrl;
-  late final TextEditingController _nextVisitTimeCtrl;
+  late final TextEditingController
+  _nextVisitTimeCtrl; // Pour l'heure de la prochaine visite (non persistante)
   late bool _isPaid;
   late final TextEditingController _amountPaidCtrl;
   late final TextEditingController _totalAmountCtrl;
+  late final String _visitDate;
+  late final String _visitTime;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize controllers with data from widget.visit
-    _dateCtrl = TextEditingController(text: widget.visit.date);
-    _timeCtrl = TextEditingController(text: widget.visit.time);
+    _visitDate = widget.visit.date;
+    _visitTime = widget.visit.time;
     _purposeCtrl = TextEditingController(text: widget.visit.purpose);
     _findingsCtrl = TextEditingController(text: widget.visit.findings);
     _treatmentCtrl = TextEditingController(text: widget.visit.treatment);
@@ -52,11 +47,13 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
     _nextVisitDateCtrl = TextEditingController(
       text: widget.visit.nextVisitDate ?? '',
     );
-    // Assuming nextVisitTime isn't in the Visit model, default to empty or extract if exists
-    _nextVisitTimeCtrl = TextEditingController(); // Initialize as empty for now
-
-    // Handle payment fields
-    _isPaid = widget.visit.isPaid ?? false;
+    // --- CORRECTION : Initialisation sans valeur persistante ---
+    // Comme nextVisitTime n'est pas stocké dans le modèle Visit,
+    // le champ reste vide au démarrage, cohérent avec AddVisitScreen.
+    _nextVisitTimeCtrl = TextEditingController(); // Reste vide initialement
+    // --- FIN DE LA CORRECTION ---
+    _isPaid =
+        widget.visit.isPaid; // Pas besoin de ?? false si le modèle le garantit
     _amountPaidCtrl = TextEditingController(
       text: widget.visit.amountPaid?.toString() ?? '',
     );
@@ -67,29 +64,70 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
 
   @override
   void dispose() {
-    _dateCtrl.dispose();
-    _timeCtrl.dispose();
     _purposeCtrl.dispose();
     _findingsCtrl.dispose();
     _treatmentCtrl.dispose();
     _notesCtrl.dispose();
     _nextVisitDateCtrl.dispose();
-    _nextVisitTimeCtrl.dispose();
+    _nextVisitTimeCtrl.dispose(); // Dispose le contrôleur
     _amountPaidCtrl.dispose();
     _totalAmountCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.teal),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
+    }
+  }
+
+  Future<void> _selectTime(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.teal),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      controller.text = picked.format(context);
+    }
+  }
+
   void _updateVisit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      // Prepare updated visit data
+      // --- CORRECTION : Ne pas inclure nextVisitTime dans l'objet Visit mis à jour ---
+      // Le modèle Visit actuel ne contient pas ce champ.
       final updatedVisit = Visit(
-        id: widget.visit.id, // Keep the original ID
-        patientId: widget.patientId, // Use the passed patientId
-        date: _dateCtrl.text,
-        time: _timeCtrl.text,
+        id: widget.visit.id,
+        patientId: widget.patientId,
+        date: _visitDate,
+        time: _visitTime,
         purpose: _purposeCtrl.text,
         findings: _findingsCtrl.text,
         treatment: _treatmentCtrl.text,
@@ -97,56 +135,47 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
         nextVisitDate: _nextVisitDateCtrl.text.isEmpty
             ? null
             : _nextVisitDateCtrl.text,
-        // nextVisitTime: _nextVisitTimeCtrl.text.isEmpty ? null : _nextVisitTimeCtrl.text, // Add if needed
+        // nextVisitTime est ignoré ici car il n'est pas dans le modèle Visit
         isPaid: _isPaid,
         amountPaid: double.tryParse(_amountPaidCtrl.text) ?? 0.0,
         totalAmount: double.tryParse(_totalAmountCtrl.text) ?? 0.0,
       );
-
+      // --- FIN DE LA CORRECTION ---
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
       );
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Mise à jour de la visite...',
+            'Mise à jour...',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
           backgroundColor: Colors.teal,
           duration: const Duration(seconds: 1),
         ),
       );
-
       try {
         await patientProvider.updateVisit(updatedVisit);
-        // Optionally, handle appointment updates if next visit date/time changes significantly
-        // This is simplified; you might need more logic to update/delete existing appointments
-        // if (updatedVisit.nextVisitDate != null && updatedVisit.nextVisitDate!.isNotEmpty) {
-        //   // Logic to update or add appointment
-        // }
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Visite mise à jour avec succès !',
+                'Visite mise à jour !',
                 style: GoogleFonts.montserrat(color: Colors.white),
               ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
           );
-          // Pop and potentially pass a result back if needed by the caller
-          Navigator.of(context).pop(true); // Indicate successful update
+          Navigator.of(context).pop(true);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Erreur lors de la mise à jour: $e',
+                'Erreur: $e',
                 style: GoogleFonts.montserrat(color: Colors.white),
               ),
               backgroundColor: Colors.red,
@@ -158,9 +187,7 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
     }
   }
 
-  // --- Reuse _buildTextField, _buildSectionHeader, _buildSection from add_visit_screen.dart ---
-  // For brevity, I'll define minimal versions here. You can copy the full methods from add_visit_screen.dart
-  // if you want identical styling.
+  // ... (Les méthodes _buildTextField, _buildSectionHeader, _buildSection restent identiques)
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -272,13 +299,12 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
       ],
     );
   }
-  // --- End of reused methods ---
 
   @override
   Widget build(BuildContext context) {
+    // ... (La méthode build reste identique, sauf pour l'appel à _updateVisit)
     final isTablet = MediaQuery.of(context).size.width >= 600;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -321,73 +347,12 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                       _buildSection(
                         title: 'Détails de la Visite',
                         children: [
-                          // Display current date/time (non-editable for simplicity)
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                      horizontal: 16.0,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today,
-                                          color: Colors.teal.shade700,
-                                          size: 24.0,
-                                        ),
-                                        const SizedBox(width: 10.0),
-                                        Text(
-                                          _dateCtrl.text,
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 16.0,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12.0),
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                      horizontal: 16.0,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          color: Colors.teal.shade700,
-                                          size: 24.0,
-                                        ),
-                                        const SizedBox(width: 10.0),
-                                        Text(
-                                          _timeCtrl.text,
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 16.0,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          VisitDateTimeInfo(
+                            date: _visitDate,
+                            time: _visitTime,
+                            isTablet: isTablet,
                           ),
+                          const SizedBox(height: 16),
                           _buildTextField(
                             controller: _purposeCtrl,
                             labelText: 'Motif',
@@ -418,17 +383,19 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                           ),
                           _buildTextField(
                             controller: _nextVisitDateCtrl,
-                            labelText:
-                                'Date de la Prochaine Visite (Optionnel)',
+                            labelText: 'Date de la Prochaine Visite',
                             prefixIcon: const Icon(Icons.event_available),
-                            readOnly: true, // Make read-only or add date picker
+                            readOnly: true,
+                            onTap: () =>
+                                _selectDate(context, _nextVisitDateCtrl),
                           ),
                           _buildTextField(
                             controller: _nextVisitTimeCtrl,
-                            labelText:
-                                'Heure de la Prochaine Visite (Optionnel)',
+                            labelText: 'Heure de la Prochaine Visite',
                             prefixIcon: const Icon(Icons.access_time),
-                            readOnly: true, // Make read-only or add time picker
+                            readOnly: true,
+                            onTap: () =>
+                                _selectTime(context, _nextVisitTimeCtrl),
                           ),
                         ],
                       ),
@@ -440,7 +407,7 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                               Expanded(
                                 child: _buildTextField(
                                   controller: _totalAmountCtrl,
-                                  labelText: 'Montant Total (Optionnel)',
+                                  labelText: 'Montant Total',
                                   prefixText: 'DT ',
                                   prefixIcon: const Icon(Icons.attach_money),
                                   keyboardType:
@@ -448,10 +415,10 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                                         decimal: true,
                                       ),
                                   validator: (value) {
-                                    if (value != null && value.isNotEmpty) {
-                                      if (double.tryParse(value) == null) {
-                                        return 'Montant invalide';
-                                      }
+                                    if (value != null &&
+                                        value.isNotEmpty &&
+                                        double.tryParse(value) == null) {
+                                      return 'Montant invalide';
                                     }
                                     return null;
                                   },
@@ -461,7 +428,7 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                               Expanded(
                                 child: _buildTextField(
                                   controller: _amountPaidCtrl,
-                                  labelText: 'Montant Payé (Optionnel)',
+                                  labelText: 'Montant Payé',
                                   prefixText: 'DT ',
                                   prefixIcon: const Icon(Icons.payments),
                                   keyboardType:
@@ -475,12 +442,10 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                                       final total = double.tryParse(
                                         _totalAmountCtrl.text,
                                       );
-                                      if (paid == null) {
+                                      if (paid == null)
                                         return 'Montant invalide';
-                                      }
-                                      if (total != null && paid > total) {
+                                      if (total != null && paid > total)
                                         return 'Ne peut dépasser le total';
-                                      }
                                     }
                                     return null;
                                   },
@@ -505,11 +470,10 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                                   onChanged: (value) {
                                     setState(() {
                                       _isPaid = value;
-                                      if (_isPaid) {
-                                        if (_totalAmountCtrl.text.isNotEmpty) {
-                                          _amountPaidCtrl.text =
-                                              _totalAmountCtrl.text;
-                                        }
+                                      if (_isPaid &&
+                                          _totalAmountCtrl.text.isNotEmpty) {
+                                        _amountPaidCtrl.text =
+                                            _totalAmountCtrl.text;
                                       } else {
                                         _amountPaidCtrl.clear();
                                       }
@@ -523,14 +487,14 @@ class _EditVisitScreenState extends State<EditVisitScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      // Align the save button to the right
                       Align(
                         alignment: Alignment.centerRight,
                         child: SizedBox(
                           width: isTablet ? 300 : 250,
                           child: MainButton(
-                            onPressed: _updateVisit,
-                            label: 'Mettre à jour la visite',
+                            onPressed:
+                                _updateVisit, // Assurez-vous que c'est la bonne méthode
+                            label: 'Mettre à jour',
                             icon: Icons.save,
                             backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,

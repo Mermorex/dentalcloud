@@ -1,20 +1,19 @@
 // lib/main.dart
 import 'dart:async';
 import 'dart:html' as html; // Import for web URL manipulation
-import 'package:dental/providers/subscription_provider.dart';
-import 'package:flutter/foundation.dart'; // Import for kIsWeb
 import 'package:dental/models/patient.dart';
 import 'package:dental/providers/patient_provider.dart';
 import 'package:dental/screens/add_patient_screen.dart';
+import 'package:dental/screens/auth_screen.dart';
 import 'package:dental/screens/edit_patient_screen.dart';
+import 'package:dental/screens/home_screen.dart';
+import 'package:dental/screens/set_password_screen.dart';
+import 'package:flutter/foundation.dart'; // Import for kIsWeb
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:dental/screens/home_screen.dart';
-import 'package:dental/screens/auth_screen.dart';
-import 'package:dental/screens/set_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +61,7 @@ void main() async {
         providers: [ChangeNotifierProvider(create: (_) => PatientProvider())],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Dental App - Set Password',
+          title: 'DentyPro - Set Password',
           theme: ThemeData(
             primarySwatch: Colors.teal,
             visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -146,7 +145,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Dental App',
+      title: 'DentyPro',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         visualDensity: VisualDensity.adaptivePlatformDensity,

@@ -13,10 +13,12 @@
 
     <link rel="icon" type="image/png" href="favicon.png"/>
 
-    <title>dental</title>
+    <title>DENTYPRO</title>
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
+
+   
     <script src="flutter_bootstrap.js" async></script>
     <script>
         window.addEventListener('load', function () {
@@ -24,7 +26,7 @@
                 // The new load() method now takes a configuration object.
                 serviceWorker: {
                     // Use the template token for the service worker version.
-                    serviceWorkerVersion: '"1243249879"',
+                    serviceWorkerVersion: '"3400389565"',
                 }
             }).then(function (engineInitializer) {
                 // Once the engine is initialized, you can configure it before running the app.
@@ -34,7 +36,15 @@
                 appRunner.runApp();
             });
         });
+         window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space') {
+      // Let the browser insert the space into the focused <input>
+      e.stopImmediatePropagation();
+    }
+  }, true);
     </script>
+
+
     
 </body>
 </html>
