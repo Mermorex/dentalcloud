@@ -1,13 +1,16 @@
 // lib/screens/add_visit_screen.dart
+import 'package:dental/db/document_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+// import 'package:file_picker/file_picker.dart'; // Import file_picker - REMOVED
 import '../models/visit.dart';
 import '../providers/patient_provider.dart';
 import '../widgets/main_button.dart';
 import '../models/appointment.dart';
-import '../widgets/visit_date_time_info.dart'; // ✅ Import the new widget
+import '../widgets/visit_date_time_info.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for auth check if needed in UI
 
 class AddVisitScreen extends StatefulWidget {
   final String patientId;
@@ -30,6 +33,11 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
   bool _isPaid = false;
   final _amountPaidCtrl = TextEditingController();
   final _totalAmountCtrl = TextEditingController();
+  // --- REMOVED: State for handling attached files ---
+  // List<PlatformFile> _selectedFiles = [];
+  // bool _isUploadingFiles = false; // Optional: to show upload state
+  // final DocumentService _documentService = DocumentService(); // Initialize service
+  // --- END OF REMOVED ---
 
   @override
   void initState() {
@@ -59,6 +67,7 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     _nextVisitTimeCtrl.dispose();
     _amountPaidCtrl.dispose();
     _totalAmountCtrl.dispose();
+    // --- REMOVED: Disposal of file picker related state ---
     super.dispose();
   }
 
@@ -100,13 +109,47 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
     }
   }
 
+  // --- REMOVED: Function to pick files ---
+  // Future<void> _pickFiles() async {
+  //   try {
+  //     FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //       allowMultiple: true, // Allow selecting multiple files
+  //       type: FileType
+  //           .any, // Or restrict to specific types like FileType.image, FileType.custom
+  //       // allowedExtensions: ['pdf', 'jpg', 'png', 'doc', 'docx'], // Example for custom types
+  //     );
+  //     if (result != null) {
+  //       setState(() {
+  //         _selectedFiles = result.files; // Update state with selected files
+  //       });
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Erreur lors de la sélection des fichiers: $e'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
+  // --- END OF REMOVED ---
+
+  // --- REMOVED: Function to remove a selected file ---
+  // void _removeSelectedFile(int index) {
+  //   setState(() {
+  //     _selectedFiles.removeAt(index);
+  //   });
+  // }
+  // --- END OF REMOVED ---
+
   void _saveVisit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       if (_isPaid && _totalAmountCtrl.text.isNotEmpty) {
         _amountPaidCtrl.text = _totalAmountCtrl.text;
       }
-
       final newVisit = Visit(
         patientId: widget.patientId,
         date: _dateCtrl.text,
@@ -127,6 +170,8 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         context,
         listen: false,
       );
+
+      // --- MODIFIED: Show initial saving snackbar ---
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -138,33 +183,129 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
         ),
       );
 
-      await patientProvider.addVisit(newVisit);
+      try {
+        // --- REMOVED: Getting cabinetId for document upload ---
+        // final String? cabinetId = patientProvider.currentCabinetId;
+        // if (cabinetId == null) {
+        //   throw Exception("Impossible de déterminer le cabinet pour le téléchargement du document.");
+        // }
 
-      if (_nextVisitDateCtrl.text.isNotEmpty) {
-        final newAppointment = Appointment(
-          patientId: widget.patientId,
-          date: _nextVisitDateCtrl.text,
-          time: _nextVisitTimeCtrl.text.isNotEmpty
-              ? _nextVisitTimeCtrl.text
-              : '09:00 AM',
-          notes: 'Prochaine visite (auto-générée)',
-          status: 'Scheduled',
-        );
-        await patientProvider.addAppointment(newAppointment);
-      }
+        // Add the visit
+        await patientProvider.addVisit(newVisit);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Visite ajoutée avec succès !',
-              style: GoogleFonts.montserrat(color: Colors.white),
+        // --- REMOVED: Upload selected files after visit is created ---
+        // if (_selectedFiles.isNotEmpty) {
+        //   setState(() {
+        //     _isUploadingFiles = true; // Optional: Update UI state
+        //   });
+        //   // Show uploading files snackbar
+        //   if (mounted) {
+        //     ScaffoldMessenger.of(context).hideCurrentSnackBar(); // Hide previous snackbar
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       SnackBar(
+        //         content: Text(
+        //           'Téléchargement des documents...',
+        //           style: GoogleFonts.montserrat(color: Colors.white),
+        //         ),
+        //         backgroundColor: Colors.blue,
+        //         duration: const Duration(seconds: 2), // Adjust duration as needed
+        //       ),
+        //     );
+        //   }
+        //   List<Future<void>> uploadFutures = [];
+        //   for (var file in _selectedFiles) {
+        //     // Assuming DocumentService handles errors internally or throws
+        //     uploadFutures.add(
+        //       _documentService.uploadDocument(
+        //         patientId: widget.patientId,
+        //         cabinetId: cabinetId, // Pass the cabinetId
+        //         file: file,
+        //         description: 'Document attaché à la visite du ${newVisit.date}', // Optional description
+        //         category: 'VisitAttachment', // Optional category
+        //       ),
+        //     );
+        //   }
+        //   // Wait for all uploads to complete
+        //   await Future.wait(uploadFutures);
+        //   if (mounted) {
+        //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       SnackBar(
+        //         content: Text(
+        //           'Documents téléchargés avec succès !',
+        //           style: GoogleFonts.montserrat(color: Colors.white),
+        //         ),
+        //         backgroundColor: Colors.blue,
+        //         duration: const Duration(seconds: 2),
+        //       ),
+        //     );
+        //   }
+        // }
+        // --- END OF REMOVED ---
+
+        // Handle next appointment creation
+        if (_nextVisitDateCtrl.text.isNotEmpty) {
+          final newAppointment = Appointment(
+            patientId: widget.patientId,
+            date: _nextVisitDateCtrl.text,
+            time: _nextVisitTimeCtrl.text.isNotEmpty
+                ? _nextVisitTimeCtrl.text
+                : '09:00 AM',
+            notes: 'Prochaine visite (auto-générée)',
+            status: 'Scheduled',
+          );
+          await patientProvider.addAppointment(newAppointment);
+        }
+
+        if (mounted) {
+          // Show final success snackbar
+          ScaffoldMessenger.of(
+            context,
+          ).hideCurrentSnackBar(); // Hide previous snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Visite ajoutée avec succès !', // Updated message
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
             ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        Navigator.of(context).pop();
+          );
+          Navigator.of(context).pop(); // Navigate back
+        }
+      } catch (e) {
+        // Handle errors during visit creation or file upload
+        if (mounted) {
+          // --- REMOVED: Resetting upload UI state on error ---
+          // setState(() {
+          //   _isUploadingFiles = false; // Reset UI state on error
+          // });
+          // --- END OF REMOVED ---
+          ScaffoldMessenger.of(
+            context,
+          ).hideCurrentSnackBar(); // Hide previous snackbar
+          print("AddVisitScreen: Error saving visit or uploading files: $e");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Erreur lors de l\'ajout: $e',
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } finally {
+        // Ensure UI state is reset even if an error occurs
+        if (mounted) {
+          // --- REMOVED: Resetting upload UI state in finally block ---
+          // setState(() {
+          //   _isUploadingFiles = false;
+          // });
+          // --- END OF REMOVED ---
+        }
       }
     }
   }
@@ -304,6 +445,96 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
       ],
     );
   }
+
+  // --- REMOVED: Widget to display selected files ---
+  // Widget _buildSelectedFilesList() {
+  //   if (_selectedFiles.isEmpty) return const SizedBox.shrink();
+  //   return Container(
+  //     margin: const EdgeInsets.only(top: 10.0),
+  //     padding: const EdgeInsets.all(10.0),
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: Colors.grey.shade300),
+  //       borderRadius: BorderRadius.circular(10.0),
+  //       color: Colors.grey.shade50,
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Fichiers sélectionnés (${_selectedFiles.length}):',
+  //           style: GoogleFonts.montserrat(
+  //             fontWeight: FontWeight.bold,
+  //             fontSize: 16,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         ..._selectedFiles.asMap().entries.map((entry) {
+  //           int idx = entry.key;
+  //           PlatformFile file = entry.value;
+  //           return Dismissible(
+  //             key: Key(file.path ?? file.name + idx.toString()), // Unique key
+  //             direction: DismissDirection.endToStart,
+  //             background: Container(
+  //               alignment: Alignment.centerRight,
+  //               padding: const EdgeInsets.only(right: 20),
+  //               color: Colors.red,
+  //               child: const Icon(Icons.delete, color: Colors.white),
+  //             ),
+  //             onDismissed: (_) => _removeSelectedFile(idx),
+  //             child: ListTile(
+  //               leading: Icon(
+  //                 _getIconForFile(file.extension),
+  //                 color: Colors.teal.shade700,
+  //               ),
+  //               title: Text(
+  //                 file.name,
+  //                 style: GoogleFonts.montserrat(fontSize: 14),
+  //                 overflow: TextOverflow.ellipsis, // Handle long names
+  //               ),
+  //               subtitle: Text(
+  //                 '${(file.size / 1024).toStringAsFixed(1)} KB',
+  //                 style: GoogleFonts.montserrat(
+  //                   fontSize: 12,
+  //                   color: Colors.grey,
+  //                 ),
+  //               ),
+  //               trailing: IconButton(
+  //                 icon: const Icon(Icons.close, color: Colors.red),
+  //                 onPressed: () => _removeSelectedFile(idx),
+  //                 tooltip: 'Supprimer',
+  //               ),
+  //               contentPadding: const EdgeInsets.symmetric(
+  //                 horizontal: 8.0,
+  //                 vertical: 2.0,
+  //               ),
+  //               dense: true, // Make list tile more compact
+  //             ),
+  //           );
+  //         }).toList(),
+  //       ],
+  //     ),
+  //   );
+  // }
+  // --- END OF REMOVED ---
+
+  // --- REMOVED: Helper to get icon based on file extension ---
+  // IconData _getIconForFile(String? extension) {
+  //   switch (extension?.toLowerCase()) {
+  //     case 'pdf':
+  //       return Icons.picture_as_pdf;
+  //     case 'jpg':
+  //     case 'jpeg':
+  //     case 'png':
+  //     case 'gif':
+  //       return Icons.image;
+  //     case 'doc':
+  //     case 'docx':
+  //       return Icons.description;
+  //     default:
+  //       return Icons.insert_drive_file; // Default file icon
+  //   }
+  // }
+  // --- END OF REMOVED ---
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +676,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                         _buildSection(
                           title: 'Détails de la Visite',
                           children: [
-                            // ✅ Replaced with shared VisitDateTimeInfo
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 8.0,
@@ -457,7 +687,6 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                                 showTime: true,
                               ),
                             ),
-                            // Motif, findings, treatment, notes, etc.
                             _buildTextField(
                               controller: _purposeCtrl,
                               labelText: 'Motif',
@@ -508,6 +737,68 @@ class _AddVisitScreenState extends State<AddVisitScreen> {
                               onTap: () => _selectTime(_nextVisitTimeCtrl),
                               textInputAction: TextInputAction.done,
                             ),
+                            // --- REMOVED: Section for attaching files ---
+                            // const SizedBox(height: 20),
+                            // _buildSectionHeader('Documents'),
+                            // Container(
+                            //   margin: const EdgeInsets.only(bottom: 20.0),
+                            //   decoration: BoxDecoration(
+                            //     color: Colors.white,
+                            //     borderRadius: BorderRadius.circular(20),
+                            //     boxShadow: [
+                            //       BoxShadow(
+                            //         color: Colors.black.withOpacity(0.04),
+                            //         blurRadius: 12,
+                            //         offset: const Offset(0, 4),
+                            //       ),
+                            //     ],
+                            //   ),
+                            //   padding: const EdgeInsets.all(20.0),
+                            //   child: Column(
+                            //     crossAxisAlignment: CrossAxisAlignment.stretch,
+                            //     children: [
+                            //       ElevatedButton.icon(
+                            //         onPressed: _isUploadingFiles
+                            //             ? null
+                            //             : _pickFiles, // Disable while uploading
+                            //         icon: const Icon(Icons.attach_file),
+                            //         label: Text(
+                            //           _isUploadingFiles
+                            //               ? 'Téléchargement...'
+                            //               : 'Joindre des fichiers',
+                            //           style: GoogleFonts.montserrat(
+                            //             fontSize: 16,
+                            //             fontWeight: FontWeight.w600,
+                            //           ),
+                            //         ),
+                            //         style: ElevatedButton.styleFrom(
+                            //           backgroundColor: Colors.teal.shade50,
+                            //           foregroundColor: Colors.teal.shade700,
+                            //           padding: const EdgeInsets.symmetric(
+                            //             vertical: 15,
+                            //           ),
+                            //           shape: RoundedRectangleBorder(
+                            //             borderRadius: BorderRadius.circular(15),
+                            //           ),
+                            //           elevation: 0,
+                            //           side: BorderSide(
+                            //             color: Colors.teal.shade200,
+                            //           ),
+                            //         ),
+                            //       ),
+                            //       if (_isUploadingFiles)
+                            //         const Padding(
+                            //           padding: EdgeInsets.all(8.0),
+                            //           child: LinearProgressIndicator(
+                            //             color: Colors.teal,
+                            //             backgroundColor: Colors.grey,
+                            //           ),
+                            //         ),
+                            //       _buildSelectedFilesList(), // Display selected files
+                            //     ],
+                            //   ),
+                            // ),
+                            // --- END OF REMOVED ---
                           ],
                         ),
                         _buildSection(

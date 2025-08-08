@@ -2,7 +2,7 @@
 class Patient {
   final String? id;
   final String name;
-  final int age;
+  final int? age;
   final String gender;
   final String phone;
   final String? dateOfBirth;
@@ -25,7 +25,7 @@ class Patient {
   final String? lastDentalVisit;
   final String? lastXray;
   final int visitCount;
-  final String? cabinetId; // ✅ Now cabinetId (UUID), not cabinetCode
+  final String? cabinetId;
 
   Patient({
     this.id,
@@ -53,15 +53,20 @@ class Patient {
     this.lastDentalVisit,
     this.lastXray,
     this.visitCount = 0,
-    this.cabinetId, // ✅
+    this.cabinetId,
   });
 
-  // Convert to Map for database insertion
-  // ✅ FIXED: Conditionally include 'id' only if it's not null
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Patient && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
   Map<String, dynamic> toMap() {
     final Map<String, dynamic> data = {
-      // Add non-nullable fields and nullable fields that should always be included
-      // Note: 'id' is deliberately omitted if null
       'name': name,
       'age': age,
       'gender': gender,
@@ -86,20 +91,14 @@ class Patient {
       'last_dental_visit': lastDentalVisit,
       'last_xray': lastXray,
       'visit_count': visitCount,
-      'cabinet_id': cabinetId, // ✅ DB column is cabinet_id
+      'cabinet_id': cabinetId,
     };
-
-    // Conditionally add fields that might be null and should be omitted if null
-    // Crucially, omit 'id' if it's null
     if (id != null) {
       data['id'] = id;
     }
-
     return data;
   }
-  // ✅ END OF FIX
 
-  // Create from Map (from DB)
   factory Patient.fromMap(Map<String, dynamic> map) {
     return Patient(
       id: map['id'],
@@ -127,11 +126,10 @@ class Patient {
       lastDentalVisit: map['last_dental_visit'],
       lastXray: map['last_xray'],
       visitCount: map['visit_count'] ?? 0,
-      cabinetId: map['cabinet_id'], // ✅
+      cabinetId: map['cabinet_id'],
     );
   }
 
-  // ✅ Updated copyWith to use cabinetId
   Patient copyWith({
     String? id,
     String? name,
@@ -158,7 +156,7 @@ class Patient {
     String? lastDentalVisit,
     String? lastXray,
     int? visitCount,
-    String? cabinetId, // ✅ Parameter name corrected
+    String? cabinetId,
   }) {
     return Patient(
       id: id ?? this.id,
@@ -190,7 +188,7 @@ class Patient {
       lastDentalVisit: lastDentalVisit ?? this.lastDentalVisit,
       lastXray: lastXray ?? this.lastXray,
       visitCount: visitCount ?? this.visitCount,
-      cabinetId: cabinetId ?? this.cabinetId, // ✅
+      cabinetId: cabinetId ?? this.cabinetId,
     );
   }
 }

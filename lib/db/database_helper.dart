@@ -11,7 +11,6 @@ class DatabaseHelper {
   DatabaseHelper._init();
 
   /* ---------- CRUD for Patients ---------- */
-
   /// Inserts a new patient.
   /// Returns 1 on success, 0 on failure.
   Future<int> insertPatient(Patient patient) async {
@@ -20,7 +19,6 @@ class DatabaseHelper {
           .from('patients')
           .insert(patient.toMap())
           .select('id');
-
       // Check if response is a list and contains data with a non-null 'id'
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -55,7 +53,6 @@ class DatabaseHelper {
           .update(patient.toMap())
           .eq('id', patient.id!) // Safe to unwrap after null check
           .select('id');
-
       // Check if response indicates successful update
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -98,12 +95,10 @@ class DatabaseHelper {
           .select('*')
           .eq('cabinet_id', cabinetId)
           .order('name', ascending: true);
-
       final visitData = await _supabase
           .from('visits')
           .select('patient_id')
           .eq('cabinet_id', cabinetId);
-
       final Map<String, int> visitCounts = {};
       for (var visit in visitData) {
         // Ensure visit['patient_id'] is not null before using
@@ -114,7 +109,6 @@ class DatabaseHelper {
           print("Warning: Found visit with null or invalid patient_id: $visit");
         }
       }
-
       // Map patient data to Patient objects, adding visit counts
       return patientData.map((map) {
         // Ensure map['id'] is not null before creating Patient
@@ -169,7 +163,6 @@ class DatabaseHelper {
           .eq('id', id) // id is non-nullable String
           .eq('cabinet_id', cabinetId) // cabinetId is non-nullable String
           .single(); // Expects a single map or throws if not found/ambiguous
-
       // Check if response is a Map (successful single retrieval)
       if (response is Map<String, dynamic>) {
         // Optional: Check if response['id'] matches the input id for extra safety
@@ -200,7 +193,6 @@ class DatabaseHelper {
   }
 
   /* ---------- CRUD for Visits ---------- */
-
   /// Inserts a new visit.
   /// Returns the new visit's ID on success, null on failure.
   Future<String?> insertVisit(Visit visit) async {
@@ -209,7 +201,6 @@ class DatabaseHelper {
           .from('visits')
           .insert(visit.toMap())
           .select('id');
-
       // Check if response is a list and contains data with a non-null 'id'
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -239,7 +230,6 @@ class DatabaseHelper {
           .update(visit.toMap())
           .eq('id', visit.id!) // Safe to unwrap after null check
           .select('id');
-
       // Check if response indicates successful update
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -316,7 +306,6 @@ class DatabaseHelper {
             ascending: false,
           ) // Order by date descending (newest first)
           .order('time', ascending: false); // Then order by time descending
-
       // Map response to Visit objects
       return response.map((e) {
         // Optional: Add a check for null e['id'] if Visit.fromMap requires it
@@ -332,7 +321,6 @@ class DatabaseHelper {
   }
 
   /* ---------- CRUD for Appointments ---------- */
-
   /// Inserts a new appointment.
   /// Returns 1 on success, 0 on failure.
   Future<int> insertAppointment(Appointment appointment) async {
@@ -341,7 +329,6 @@ class DatabaseHelper {
           .from('appointments')
           .insert(appointment.toMap())
           .select('id');
-
       // Check if response is a list and contains data with a non-null 'id'
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -368,7 +355,6 @@ class DatabaseHelper {
           .eq('cabinet_id', cabinetId)
           .order('date', ascending: true)
           .order('time', ascending: true);
-
       return response.map((e) {
         final Map<String, dynamic> appointmentMap = Map<String, dynamic>.from(
           e,
@@ -409,7 +395,6 @@ class DatabaseHelper {
           .eq('cabinet_id', cabinetId) // cabinetId is non-nullable String
           .order('date', ascending: true)
           .order('time', ascending: true);
-
       return response.map((e) {
         final Map<String, dynamic> appointmentMap = Map<String, dynamic>.from(
           e,
@@ -447,7 +432,6 @@ class DatabaseHelper {
           .select('name')
           .eq('id', cabinetId) // cabinetId is non-nullable String
           .single(); // Expects a single map
-
       // Check if response is a Map and contains 'name'
       if (response is Map<String, dynamic> && response['name'] is String) {
         return response['name'] as String?;
@@ -482,7 +466,6 @@ class DatabaseHelper {
           .update(appointment.toMap())
           .eq('id', appointment.id!) // Safe to unwrap after null check
           .select('id');
-
       // Check if response indicates successful update
       if (response is List && response.isNotEmpty) {
         final firstItem = response.first;
@@ -521,4 +504,56 @@ class DatabaseHelper {
   Future<void> setupBackupEnvironment() async {}
   Future<void> backupDatabase() async {}
   Future<void> _cleanupOldBackups(String backupDirPath) async {}
+
+  // --- INVOICE MANAGEMENT ---
+  /// Inserts a new invoice and returns its generated ID.
+  // --- INVOICE MANAGEMENT ---
+  /// Inserts a new invoice and returns its generated ID.
+  // In database_helper.dart
+
+  // Change the return type from Future<String?> to Future<int?>
+  /// Inserts a new invoice and returns its generated ID.
+  // In database_helper.dart
+
+  // Change the return type from Future<String?> to Future<int?>
+  /// Inserts a new invoice and returns its generated ID.
+  // In database_helper.dart
+  // Replace the current insertInvoice method with this original version:
+
+  /// Inserts a new invoice and returns its generated ID.
+  Future<String?> insertInvoice(Map<String, dynamic> invoiceData) async {
+    try {
+      // Use .select('id').single() to get the inserted row's ID directly
+      final response = await _supabase
+          .from('invoices')
+          .insert(invoiceData)
+          .select('id') // Select the 'id' column of the inserted row
+          .single(); // Get the single result as a Map
+
+      // Check if the response is a Map and contains the 'id' key
+      if (response is Map<String, dynamic> && response['id'] != null) {
+        // Cast the 'id' value to String, assuming it's the UUID returned by Supabase
+        return response['id'] as String; // ✅ Returns UUID string
+      }
+      // If the structure isn't as expected, log and return null
+      print('Insert invoice response unexpected structure: $response');
+      return null;
+    } catch (e) {
+      // Catch and print any errors during the insert/select operation
+      print('Error inserting invoice: $e');
+      return null; // Return null to indicate failure
+    }
+  }
+
+  /// Inserts a new invoice item.
+  Future<void> insertInvoiceItem(Map<String, dynamic> itemData) async {
+    try {
+      await _supabase.from('invoice_items').insert(itemData);
+    } catch (e) {
+      print('Error inserting invoice item: $e');
+      rethrow;
+    }
+  }
+
+  // --- END OF INVOICE MANAGEMENT ---
 }

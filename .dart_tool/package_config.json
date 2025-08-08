@@ -170,6 +170,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "cross_file",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/cross_file-0.3.4+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "crypto",
       "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/crypto-3.0.6",
       "packageUri": "lib/",
@@ -224,6 +230,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "file_picker",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker-10.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "fixnum",
       "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/fixnum-1.1.1",
       "packageUri": "lib/",
@@ -258,6 +270,12 @@
       "rootUri": "file:///D:/flutter/packages/flutter_localizations",
       "packageUri": "lib/",
       "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
     },
     {
       "name": "flutter_shaders",
@@ -474,6 +492,54 @@
       "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/nm-0.5.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
+    },
+    {
+      "name": "open_file",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file-3.5.10",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_android",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_android-1.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_ios",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_ios-1.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_linux",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_linux-0.0.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_mac",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_mac-1.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_platform_interface",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_platform_interface-1.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_web",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_web-0.0.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "open_file_windows",
+      "rootUri": "file:///C:/Users/MSI/AppData/Local/Pub/Cache/hosted/pub.dev/open_file_windows-0.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
     },
     {
       "name": "open_filex",

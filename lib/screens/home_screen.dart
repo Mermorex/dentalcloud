@@ -1,4 +1,5 @@
 // lib/screens/home_screen.dart
+// (All existing imports remain the same)
 import 'package:dental/screens/appointments_list_screen.dart';
 import 'package:dental/screens/patients_list.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
           "HomeScreen: Cabinet ID already present in provider. Loading data...",
         );
         // Data might already be loaded, but trigger a reload to be sure
+        // Note: These calls are kept for the 'already present' case.
         await patientProvider.loadPatients();
         await patientProvider.loadAppointments();
         print(
@@ -132,20 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 print(
                   "HomeScreen: Fetched cabinet ID '$cabinetId'. Setting in provider...",
                 );
-                // Setting the cabinet ID in the provider should trigger data loading if needed,
-                // or we can load explicitly afterwards.
-                // --- CHANGED setCurrentCabinetCode -> setCurrentCabinetId ---
-                await patientProvider.setCurrentCabinetId(
-                  cabinetId,
-                ); // <-- CHANGED THIS ---
+                // --- KEY CHANGE HERE ---
+                // Setting the cabinet ID in the provider should now trigger data loading internally.
+                // We wait for the provider to complete its internal setup.
+                await patientProvider.setCurrentCabinetId(cabinetId);
                 print(
-                  "HomeScreen: Cabinet ID set in provider. Loading data...",
+                  "HomeScreen: Cabinet ID set and data loaded via provider.",
                 );
-                await patientProvider.loadPatients();
-                await patientProvider.loadAppointments();
-                print(
-                  "HomeScreen: Data loaded successfully after fetching cabinet ID.",
-                );
+                // --- REMOVED EXPLICIT CALLS ---
+                // The provider's setCurrentCabinetId now handles loading patients & appointments.
+                // await patientProvider.loadPatients();    // <-- REMOVED THIS LINE
+                // await patientProvider.loadAppointments(); // <-- REMOVED THIS LINE
+                // --- ---
               } else {
                 // Unexpected: Record found but ID is null/empty
                 print(

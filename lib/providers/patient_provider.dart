@@ -14,6 +14,7 @@ class PatientProvider with ChangeNotifier {
   // CHANGED: _currentCabinetCode -> _currentCabinetId
   String? _currentCabinetId;
   String? _currentCabinetName; // Store the cabinet name
+
   static const int MAX_PATIENT_LIMIT = 30;
 
   List<Patient> get patients => _patients;
@@ -27,24 +28,84 @@ class PatientProvider with ChangeNotifier {
   // --- MODIFIED setCurrentCabinetId ---
   // Method to set current cabinet ID and load associated info
   // Ensures data is cleared when cabinet ID is set to null.
+  // Ensures data is loaded BEFORE notifying listeners for the main change.
   Future<void> setCurrentCabinetId(String? cabinetId) async {
-    // CHANGED: Parameter
-    _currentCabinetId = cabinetId; // CHANGED: Assignment
-    _currentCabinetName = null; // Reset name when ID changes
-    if (cabinetId != null) {
-      await _loadCabinetName(); // Load the cabinet name when ID is set
-    } else {
-      // Clear data lists when cabinet ID is removed (e.g., on logout or error)
+    print("PatientProvider: Setting currentCabinetId to '$cabinetId'");
+
+    // Store the old ID to determine if it's actually changing
+    final String? oldCabinetId = _currentCabinetId;
+
+    // If the ID is being set to null, clear data immediately and notify.
+    if (cabinetId == null) {
+      _currentCabinetId = null;
+      _currentCabinetName = null;
       print("PatientProvider: Clearing data lists because cabinet ID is null.");
       _patients = [];
       _filteredPatients = [];
       _appointments = [];
       _currentSearchQuery = '';
+      notifyListeners(); // Notify that everything is cleared
+      return;
     }
+
+    // If the ID is the same as the current one, potentially reload data.
+    if (cabinetId == oldCabinetId) {
+      print("PatientProvider: Cabinet ID is the same. Reloading data...");
+      try {
+        await loadPatients();
+        await loadAppointments();
+        print("PatientProvider: Data reloaded for existing cabinet ID.");
+        notifyListeners(); // Notify after data reload
+      } catch (e) {
+        print(
+          "PatientProvider Error: Failed to reload data for existing ID: $e",
+        );
+        notifyListeners(); // Still notify
+      }
+      return;
+    }
+
+    // --- NEW LOGIC: ID is changing to a new, non-null value ---
+
+    // 1. Clear old data lists immediately to prevent showing stale data
+    _patients = [];
+    _filteredPatients = [];
+    _appointments = [];
+    _currentSearchQuery = '';
+    _currentCabinetName = null; // Reset name as ID is changing
+
+    // 2. Set the new ID *internally* but DON'T notify main listeners yet
+    _currentCabinetId = cabinetId;
+
+    // 3. Load the essential data (patients, appointments) associated with the NEW ID
+    //    This is the crucial step: Do the loading BEFORE the main notifyListeners.
+    bool dataLoadedSuccessfully = true;
+    try {
+      print("PatientProvider: Loading initial data for new cabinet ID...");
+      await loadPatients(); // Load patients for the new cabinet
+      await loadAppointments(); // Load appointments for the new cabinet
+      // Load cabinet name for the new cabinet
+      await _loadCabinetName();
+      print(
+        "PatientProvider: Initial data loaded successfully for new cabinet ID.",
+      );
+    } catch (loadError) {
+      dataLoadedSuccessfully = false;
+      print(
+        "PatientProvider Error: Failed to load initial data for new cabinet ID '$cabinetId': $loadError",
+      );
+      // Ensure data lists are cleared on failure
+      _patients = [];
+      _filteredPatients = [];
+      _appointments = [];
+      _currentCabinetName = null;
+    }
+
+    // 4. NOW, notify all listeners that the ID has changed AND the initial data load status.
+    print(
+      "PatientProvider: Notifying listeners about cabinet ID change and data load status: $dataLoadedSuccessfully",
+    );
     notifyListeners();
-    // Optionally reload data for the new cabinet
-    // await loadPatients();
-    // await loadAppointments();
   }
   // --- END OF MODIFIED setCurrentCabinetId ---
 
